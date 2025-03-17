@@ -1,12 +1,12 @@
 import { Routes, Route, Navigate } from "react-router-dom";
 import { useAuthContext } from "./hooks/useAuthContext";
+import { ReactElement } from "react";
 import Home from "./pages/Home";
 import Dashboard from "./pages/Dashboard";
 import Loading from "./components/Loading";
 
-// Protected route component
 interface ProtectedRouteProps {
-  children: JSX.Element;
+  children: ReactElement;
 }
 
 const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
@@ -35,7 +35,6 @@ const AppRoutes = () => {
           </ProtectedRoute>
         }
       />
-      {/* Add more routes as needed */}
     </Routes>
   );
 };
