@@ -4,6 +4,7 @@ import { ReactElement } from "react";
 import Home from "./pages/Home";
 import Dashboard from "./pages/Dashboard";
 import Loading from "./components/Loading";
+import Profile from "./pages/Profile";
 
 interface ProtectedRouteProps {
   children: ReactElement;
@@ -20,7 +21,7 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
     return <Navigate to="/" replace />;
   }
 
-  return children;
+  return <>{children}</>;
 };
 
 const AppRoutes = () => {
@@ -32,6 +33,14 @@ const AppRoutes = () => {
         element={
           <ProtectedRoute>
             <Dashboard />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/profile"
+        element={
+          <ProtectedRoute>
+            <Profile />
           </ProtectedRoute>
         }
       />

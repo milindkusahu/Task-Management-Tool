@@ -1,7 +1,11 @@
+import { useNavigate } from "react-router-dom";
 import { useAuthContext } from "../hooks/useAuthContext";
+import { useCurrentUser } from "../hooks/useCurrentUser";
 
 const Dashboard = () => {
-  const { user, logout } = useAuthContext();
+  const { logout } = useAuthContext();
+  const { data: userProfile, isLoading } = useCurrentUser();
+  const navigate = useNavigate();
 
   return (
     <div className="min-h-screen bg-gray-100">
@@ -9,14 +13,23 @@ const Dashboard = () => {
         <div className="max-w-7xl mx-auto py-4 px-4 sm:px-6 lg:px-8 flex justify-between items-center">
           <h1 className="text-2xl font-bold text-gray-900">Task Management</h1>
           <div className="flex items-center gap-4">
-            {user?.photoURL && (
-              <img
-                src={user.photoURL}
-                alt="Profile"
-                className="h-8 w-8 rounded-full"
-              />
-            )}
-            <span>{user?.displayName}</span>
+            <button
+              onClick={() => navigate("/profile")}
+              className="flex items-center gap-2"
+            >
+              {userProfile?.photoURL && (
+                <img
+                  src={userProfile.photoURL}
+                  alt="Profile"
+                  className="h-8 w-8 rounded-full"
+                />
+              )}
+              <span>
+                {isLoading
+                  ? "Loading..."
+                  : userProfile?.displayName || "Profile"}
+              </span>
+            </button>
             <button
               onClick={logout}
               className="py-1 px-3 border border-gray-300 rounded-md text-sm hover:bg-gray-50"
