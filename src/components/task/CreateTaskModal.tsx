@@ -1,5 +1,5 @@
 import { useState, useRef } from "react";
-import { ChevronDownIcon, CrossIcon, DateIcon } from "../../utils/icons";
+import { CrossIcon, DateIcon, ChevronDownIcon } from "../../utils/icons";
 
 interface CreateTaskModalProps {
   isOpen: boolean;
@@ -23,18 +23,49 @@ export function CreateTaskModal({
   const [description, setDescription] = useState("");
   const [category, setCategory] = useState("Work");
   const [dueDate, setDueDate] = useState("");
-  const [status, setStatus] = useState("");
+  const [status, setStatus] = useState("TO-DO");
   const [attachments, setAttachments] = useState<File[]>([]);
   const [statusDropdownOpen, setStatusDropdownOpen] = useState(false);
+  const [errors, setErrors] = useState<{
+    title?: string;
+    dueDate?: string;
+    status?: string;
+  }>({});
+
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const validateForm = () => {
+    const newErrors: {
+      title?: string;
+      dueDate?: string;
+      status?: string;
+    } = {};
+
+    if (!title.trim()) {
+      newErrors.title = "Title is required";
+    }
+
+    if (!dueDate) {
+      newErrors.dueDate = "Due date is required";
+    }
+
+    if (!status) {
+      newErrors.status = "Status is required";
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
   const handleSubmit = () => {
+    if (!validateForm()) return;
+
     onSave({
       title,
       description,
       category,
       dueDate,
-      status: status || "TO-DO",
+      status,
       attachments,
     });
     resetForm();
@@ -45,8 +76,9 @@ export function CreateTaskModal({
     setDescription("");
     setCategory("Work");
     setDueDate("");
-    setStatus("");
+    setStatus("TO-DO");
     setAttachments([]);
+    setErrors({});
   };
 
   const handleOutsideClick = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -85,13 +117,20 @@ export function CreateTaskModal({
 
         <div className="p-4">
           {/* Task Title */}
-          <input
-            type="text"
-            placeholder="Task title"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            className="w-full p-2 border border-gray-300 rounded mb-4"
-          />
+          <div className="mb-4">
+            <input
+              type="text"
+              placeholder="Task title"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              className={`w-full p-2 border ${
+                errors.title ? "border-red-500" : "border-gray-300"
+              } rounded`}
+            />
+            {errors.title && (
+              <p className="text-red-500 text-xs mt-1">{errors.title}</p>
+            )}
+          </div>
 
           {/* Description */}
           <div className="mb-4">
@@ -120,7 +159,7 @@ export function CreateTaskModal({
                   <span>1.</span>
                 </button>
                 <div className="ml-auto text-xs text-gray-500">
-                  0/300 characters
+                  {description.length}/300 characters
                 </div>
               </div>
             </div>
@@ -163,13 +202,17 @@ export function CreateTaskModal({
               </label>
               <div className="relative">
                 <input
-                  type="text"
-                  placeholder="DD/MM/YYYY"
+                  type="date"
                   value={dueDate}
                   onChange={(e) => setDueDate(e.target.value)}
-                  className="w-full p-2 border border-gray-300 rounded pr-10"
+                  className={`w-full p-2 border ${
+                    errors.dueDate ? "border-red-500" : "border-gray-300"
+                  } rounded pr-10`}
                 />
                 <DateIcon className="absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                {errors.dueDate && (
+                  <p className="text-red-500 text-xs mt-1">{errors.dueDate}</p>
+                )}
               </div>
             </div>
 
@@ -181,11 +224,16 @@ export function CreateTaskModal({
               <div className="relative">
                 <button
                   onClick={() => setStatusDropdownOpen(!statusDropdownOpen)}
-                  className="w-full p-2 border border-gray-300 rounded text-left flex justify-between items-center"
+                  className={`w-full p-2 border ${
+                    errors.status ? "border-red-500" : "border-gray-300"
+                  } rounded text-left flex justify-between items-center`}
                 >
                   <span>{status || "Choose"}</span>
                   <ChevronDownIcon className="w-5 h-5" />
                 </button>
+                {errors.status && (
+                  <p className="text-red-500 text-xs mt-1">{errors.status}</p>
+                )}
 
                 {statusDropdownOpen && (
                   <div className="absolute top-full left-0 w-full mt-1 border border-gray-200 bg-white rounded shadow-lg z-10">
@@ -247,6 +295,16 @@ export function CreateTaskModal({
                   <p className="text-sm font-medium">
                     {attachments.length} file(s) selected
                   </p>
+                  <ul className="mt-2 text-left max-h-32 overflow-y-auto">
+                    {Array.from(attachments).map((file, index) => (
+                      <li
+                        key={index}
+                        className="text-sm text-gray-600 truncate"
+                      >
+                        {file.name} ({Math.round(file.size / 1024)} KB)
+                      </li>
+                    ))}
+                  </ul>
                 </div>
               )}
             </div>

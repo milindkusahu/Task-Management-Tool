@@ -1,11 +1,10 @@
 import {
   collection,
   addDoc,
-  doc,
-  getDoc,
   getDocs,
   updateDoc,
   deleteDoc,
+  doc,
   query,
   where,
   orderBy,
@@ -14,29 +13,15 @@ import {
 } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { db, storage } from "../firebase/config";
+import { Task } from "../types/task";
 
-export interface Task {
-  id?: string;
-  title: string;
-  description: string;
-  category: string;
-  status: string;
-  dueDate: string;
-  userId: string;
-  attachments?: Array<{
-    name: string;
-    url: string;
-  }>;
-  createdAt?: Timestamp;
-  updatedAt?: Timestamp;
-}
-
+// Create a new task
 export async function createTask(
   taskData: Omit<Task, "id">,
   attachmentFiles?: File[]
 ): Promise<string> {
   try {
-    // Handle file uploads first if there are any
+    // Handle file uploads
     const attachments = [];
 
     if (attachmentFiles && attachmentFiles.length > 0) {
@@ -51,7 +36,7 @@ export async function createTask(
       }
     }
 
-    // Create the task document in Firestore
+    // Create task document
     const taskRef = await addDoc(collection(db, "tasks"), {
       ...taskData,
       attachments,
@@ -66,28 +51,7 @@ export async function createTask(
   }
 }
 
-export async function getUserTasks(userId: string): Promise<Task[]> {
-  try {
-    const tasksQuery = query(
-      collection(db, "tasks"),
-      where("userId", "==", userId),
-      orderBy("createdAt", "desc")
-    );
-
-    const querySnapshot = await getDocs(tasksQuery);
-    const tasks: Task[] = [];
-
-    querySnapshot.forEach((doc) => {
-      tasks.push({ id: doc.id, ...doc.data() } as Task);
-    });
-
-    return tasks;
-  } catch (error) {
-    console.error("Error fetching tasks:", error);
-    throw error;
-  }
-}
-
+// Get tasks by user and status
 export async function getTasksByStatus(
   userId: string,
   status: string
@@ -114,6 +78,7 @@ export async function getTasksByStatus(
   }
 }
 
+// Update a task
 export async function updateTask(
   taskId: string,
   updates: Partial<Task>
@@ -130,6 +95,7 @@ export async function updateTask(
   }
 }
 
+// Delete a task
 export async function deleteTask(taskId: string): Promise<void> {
   try {
     const taskRef = doc(db, "tasks", taskId);
