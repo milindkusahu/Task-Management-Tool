@@ -321,3 +321,21 @@ export const BatchIcon = createIcon(
   />,
   "0 0 16 16"
 );
+
+export const SortIcon = createIcon(
+  <>
+    <path
+      d="M4 0L7.4641 3H0.535898L4 0Z"
+      fill="currentColor"
+      fillOpacity="0.4"
+      stroke="none"
+    />
+    <path
+      d="M4 8L0.535898 5L7.4641 5L4 8Z"
+      fill="currentColor"
+      fillOpacity="0.4"
+      stroke="none"
+    />
+  </>,
+  "0 0 8 8"
+);
