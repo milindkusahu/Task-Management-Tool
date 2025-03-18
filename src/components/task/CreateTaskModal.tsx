@@ -104,7 +104,10 @@ export function CreateTaskModal({
       className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
       onClick={handleOutsideClick}
     >
-      <div className="bg-white rounded-lg w-full max-w-2xl">
+      <div
+        className="bg-white rounded-lg w-full max-w-2xl"
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="flex justify-between items-center p-4 border-b">
           <h2 className="text-xl font-semibold">Create Task</h2>
           <button
@@ -141,6 +144,7 @@ export function CreateTaskModal({
                 onChange={(e) => setDescription(e.target.value)}
                 rows={5}
                 className="w-full p-2 rounded"
+                maxLength={300}
               />
               <div className="flex gap-2 border-t p-2 bg-gray-50">
                 <button className="p-1 hover:bg-gray-200 rounded">
@@ -320,7 +324,7 @@ export function CreateTaskModal({
           </button>
           <button
             onClick={handleSubmit}
-            className="px-6 py-2 bg-purple-500 text-white rounded-md"
+            className="px-6 py-2 bg-[#7B1984] text-white rounded-md"
           >
             CREATE
           </button>

@@ -1,3 +1,4 @@
+// src/components/task/TaskSection.tsx
 import { useState } from "react";
 import { useTasks } from "../../hooks/useTasks";
 import {
@@ -180,6 +181,7 @@ export function TaskSection({
                       setNewTask({ ...newTask, title: e.target.value })
                     }
                     className="flex-1 border border-gray-300 rounded-md px-3 py-2"
+                    autoFocus
                   />
 
                   <input
@@ -225,6 +227,16 @@ export function TaskSection({
               <div
                 key={task.id}
                 className="bg-white rounded-lg p-3 flex items-center gap-4"
+                draggable={true}
+                onDragStart={(e) => {
+                  e.dataTransfer.setData(
+                    "text/plain",
+                    JSON.stringify({
+                      id: task.id,
+                      status: task.status,
+                    })
+                  );
+                }}
               >
                 <input
                   type="checkbox"

@@ -12,6 +12,7 @@ export function useTasks() {
   const { user } = useAuthContext();
   const queryClient = useQueryClient();
 
+  // Query tasks by status
   const todoTasksQuery = useQuery({
     queryKey: ["tasks", user?.uid, "TO-DO"],
     queryFn: async () => {
