@@ -1,0 +1,43 @@
+import {
+  GoogleIcon,
+  MobileDocumentIcon,
+  ListIcon,
+  BoardIcon,
+  ChevronDownIcon,
+  PlusIcon,
+  ChevronUpIcon,
+  SearchIcon,
+  LogoutIcon,
+  AddIcon,
+  DateIcon,
+  EditIcon,
+  DeleteIcon,
+  DragIcon,
+  CheckIcon,
+  MoreIcon,
+  CrossIcon,
+  BatchIcon,
+} from "./icons";
+
+const Icons = {
+  Google: GoogleIcon,
+  MobileDocument: MobileDocumentIcon,
+  List: ListIcon,
+  Board: BoardIcon,
+  ChevronDown: ChevronDownIcon,
+  ChevronUp: ChevronUpIcon,
+  Plus: PlusIcon,
+  Search: SearchIcon,
+  Logout: LogoutIcon,
+  Add: AddIcon,
+  Date: DateIcon,
+  Edit: EditIcon,
+  Delete: DeleteIcon,
+  Drag: DragIcon,
+  Check: CheckIcon,
+  More: MoreIcon,
+  Cross: CrossIcon,
+  Batch: BatchIcon,
+};
+
+export default Icons;
