@@ -1,14 +1,11 @@
-// firestore.rules
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Allow users to read and write their own tasks
     match /tasks/{taskId} {
       allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
       allow read, update, delete: if request.auth != null && resource.data.userId == request.auth.uid;
     }
     
-    // Allow users to access their own profile
     match /users/{userId} {
       allow create, read, update, delete: if request.auth != null && userId == request.auth.uid;
     }

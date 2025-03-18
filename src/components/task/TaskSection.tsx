@@ -1,4 +1,3 @@
-// src/components/task/TaskSection.tsx
 import { useState } from "react";
 import { useTasks } from "../../hooks/useTasks";
 import {
@@ -16,7 +15,7 @@ interface TaskSectionProps {
   title: string;
   color: string;
   tasks: Array<{
-    id: number;
+    id: number | string;
     title: string;
     status: string;
     dueDate?: string;
@@ -75,17 +74,22 @@ export function TaskSection({
     }
   };
 
-  const handleTaskDelete = async (taskId: number) => {
+  const handleTaskDelete = async (taskId: number | string) => {
     if (confirm("Are you sure you want to delete this task?")) {
       try {
+        console.log("Task ID for deletion:", taskId);
         await deleteTask(String(taskId));
       } catch (error) {
         console.error("Error deleting task:", error);
+        alert("Could not delete task. Please try again later.");
       }
     }
   };
 
-  const handleTaskStatusChange = async (taskId: number, newStatus: string) => {
+  const handleTaskStatusChange = async (
+    taskId: number | string,
+    newStatus: string
+  ) => {
     try {
       await updateTask({
         taskId: String(taskId),
@@ -114,7 +118,7 @@ export function TaskSection({
               <button
                 className="w-full px-4 py-2 text-left text-sm hover:bg-gray-100 flex items-center gap-2"
                 onClick={() => {
-                  // Edit task logic (you can implement this later)
+                  // Edit task logic (implement later)
                   setShowMenu(false);
                 }}
               >
@@ -223,9 +227,13 @@ export function TaskSection({
           </div>
 
           <div className="space-y-2 p-2">
-            {tasks.map((task) => (
+            {tasks.map((task, index) => (
               <div
-                key={task.id}
+                key={
+                  typeof task.id === "string" || typeof task.id === "number"
+                    ? task.id
+                    : `task-${index}`
+                }
                 className="bg-white rounded-lg p-3 flex items-center gap-4"
                 draggable={true}
                 onDragStart={(e) => {
@@ -255,9 +263,7 @@ export function TaskSection({
                     <span className="text-sm text-gray-800">{task.title}</span>
                   </div>
                 </div>
-                <div className="text-sm text-gray-500">
-                  {task.dueDate || "Today"}
-                </div>
+                <div className="text-sm text-gray-500">{task.dueDate}</div>
                 <div className="min-w-[100px]">
                   <span className="px-3 py-1 bg-gray-100 rounded-full text-xs">
                     {task.status}

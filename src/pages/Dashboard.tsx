@@ -16,6 +16,7 @@ import {
   SearchIcon,
   SortIcon,
 } from "../utils/icons";
+import { formatDate } from "../utils/dateUtils";
 
 const Dashboard = () => {
   const { logout, user } = useAuthContext();
@@ -33,10 +34,10 @@ const Dashboard = () => {
   const [view, setView] = useState<"list" | "board">("list");
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
 
-  // Transform tasks for UI display
   const transformTasks = (tasks: Task[]) => {
     return tasks.map((task) => ({
-      id: Number(task.id),
+      id: task.id,
+      originalId: task.id,
       title: task.title,
       status: task.status,
       dueDate: task.dueDate,
@@ -82,6 +83,7 @@ const Dashboard = () => {
           category: taskData.category,
           status: taskData.status,
           dueDate: taskData.dueDate,
+          userId: user.uid,
         },
         attachmentFiles: taskData.attachments,
       });

@@ -9,10 +9,11 @@ import {
   where,
   orderBy,
   serverTimestamp,
+  getDoc,
   Timestamp,
 } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
-import { db, storage } from "../firebase/config";
+import { db, storage, auth } from "../firebase/config";
 import { Task } from "../types/task";
 
 // Create a new task
@@ -57,24 +58,49 @@ export async function getTasksByStatus(
   status: string
 ): Promise<Task[]> {
   try {
+    // Simplified query without ordering until indexes are built
     const tasksQuery = query(
       collection(db, "tasks"),
       where("userId", "==", userId),
-      where("status", "==", status),
-      orderBy("createdAt", "desc")
+      where("status", "==", status)
     );
 
     const querySnapshot = await getDocs(tasksQuery);
     const tasks: Task[] = [];
 
     querySnapshot.forEach((doc) => {
-      tasks.push({ id: doc.id, ...doc.data() } as Task);
+      const data = doc.data();
+
+      // Format date fields properly
+      const formattedData = {
+        ...data,
+        id: doc.id,
+        createdAt: data.createdAt
+          ? new Date(data.createdAt.seconds * 1000)
+          : new Date(),
+        updatedAt: data.updatedAt
+          ? new Date(data.updatedAt.seconds * 1000)
+          : new Date(),
+        dueDate:
+          typeof data.dueDate === "string"
+            ? data.dueDate
+            : data.dueDate && "seconds" in data.dueDate
+            ? new Date(data.dueDate.seconds * 1000).toISOString().split("T")[0]
+            : new Date().toISOString().split("T")[0],
+      };
+
+      tasks.push(formattedData as Task);
     });
 
-    return tasks;
+    // Sort in-memory instead of in the query
+    return tasks.sort((a, b) => {
+      const dateA = a.createdAt instanceof Date ? a.createdAt : new Date();
+      const dateB = b.createdAt instanceof Date ? b.createdAt : new Date();
+      return dateB.getTime() - dateA.getTime();
+    });
   } catch (error) {
     console.error(`Error fetching ${status} tasks:`, error);
-    throw error;
+    return []; // Return empty array instead of throwing to prevent UI errors
   }
 }
 
@@ -99,6 +125,24 @@ export async function updateTask(
 export async function deleteTask(taskId: string): Promise<void> {
   try {
     const taskRef = doc(db, "tasks", taskId);
+
+    // Get the task document first to check permissions
+    const taskDoc = await getDoc(taskRef);
+
+    if (!taskDoc.exists()) {
+      throw new Error("Task not found");
+    }
+
+    const taskData = taskDoc.data();
+    const currentUser = auth.currentUser;
+
+    // Verify that the task belongs to the current user
+    if (!currentUser || taskData.userId !== currentUser.uid) {
+      console.error("Permission denied: Task doesn't belong to current user");
+      throw new Error("Permission denied: Task doesn't belong to current user");
+    }
+
+    // If we get here, the task belongs to the current user
     await deleteDoc(taskRef);
   } catch (error) {
     console.error("Error deleting task:", error);
