@@ -154,7 +154,10 @@ export function TaskSection({
       <div className="relative">
         <button
           className="p-1 hover:bg-gray-100 rounded"
-          onClick={() => setShowMenu(!showMenu)}
+          onClick={(e) => {
+            e.stopPropagation(); // Stop event propagation
+            setShowMenu(!showMenu);
+          }}
         >
           <MoreIcon className="w-6 h-6 text-gray-500" />
         </button>
@@ -164,7 +167,8 @@ export function TaskSection({
             <div className="py-1">
               <button
                 className="w-full px-4 py-2 text-left text-sm hover:bg-gray-100 flex items-center gap-2"
-                onClick={() => {
+                onClick={(e) => {
+                  e.stopPropagation(); // Stop event propagation
                   handleEditTask(task);
                   setShowMenu(false);
                 }}
@@ -174,7 +178,8 @@ export function TaskSection({
               </button>
               <button
                 className="w-full px-4 py-2 text-left text-sm hover:bg-gray-100 text-red-600 flex items-center gap-2"
-                onClick={() => {
+                onClick={(e) => {
+                  e.stopPropagation(); // Stop event propagation
                   handleTaskDelete(task.id);
                   setShowMenu(false);
                 }}
@@ -352,6 +357,7 @@ export function TaskSection({
                       e.target.checked ? "COMPLETED" : "TO-DO"
                     );
                   }}
+                  onClick={(e) => e.stopPropagation()}
                 />
                 <div className="flex-1">
                   <div className="flex items-center gap-2">
