@@ -342,36 +342,47 @@ export function TaskSection({
                     ? task.id
                     : `task-${index}`
                 }
-                className="bg-white rounded-lg p-3 flex items-center gap-4 hover:bg-gray-50 cursor-pointer"
+                className="bg-white rounded-lg p-3 grid grid-cols-4 gap-4 hover:bg-gray-50 cursor-pointer"
                 draggable={true}
                 onDragStart={(e) => onDragStart && onDragStart(e, task)}
                 onClick={() => onTaskClick && onTaskClick(task)}
               >
-                <input
-                  type="checkbox"
-                  className="w-4 h-4 rounded border-gray-300"
-                  checked={task.status === "COMPLETED"}
-                  onChange={(e) => {
-                    handleTaskStatusChange(
-                      task.id,
-                      e.target.checked ? "COMPLETED" : "TO-DO"
-                    );
-                  }}
-                  onClick={(e) => e.stopPropagation()}
-                />
-                <div className="flex-1">
-                  <div className="flex items-center gap-2">
-                    <DragIcon className="w-4 h-4 text-gray-400" />
-                    <span className="text-sm text-gray-800">{task.title}</span>
+                {/* Task Name Column */}
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    className="w-4 h-4 rounded border-gray-300"
+                    checked={task.status === "COMPLETED"}
+                    onChange={(e) => {
+                      handleTaskStatusChange(
+                        task.id,
+                        e.target.checked ? "COMPLETED" : "TO-DO"
+                      );
+                    }}
+                    onClick={(e) => e.stopPropagation()} // Stop event propagation
+                  />
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <DragIcon className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                      <span className="text-sm text-gray-800 truncate">
+                        {task.title}
+                      </span>
+                    </div>
+                    {task.description && (
+                      <p className="text-xs text-gray-500 mt-1 line-clamp-1 ml-6">
+                        {task.description}
+                      </p>
+                    )}
                   </div>
-                  {task.description && (
-                    <p className="text-xs text-gray-500 mt-1 line-clamp-1">
-                      {task.description}
-                    </p>
-                  )}
                 </div>
-                <div className="text-sm text-gray-500">{task.dueDate}</div>
-                <div className="min-w-[100px]">
+
+                {/* Due Date Column */}
+                <div className="text-sm text-gray-500 flex items-center">
+                  {task.dueDate}
+                </div>
+
+                {/* Task Status Column */}
+                <div className="flex items-center">
                   <span
                     className={`px-3 py-1 rounded-full text-xs ${
                       task.status === "COMPLETED"
@@ -384,7 +395,9 @@ export function TaskSection({
                     {task.status}
                   </span>
                 </div>
-                <div className="min-w-[100px]">
+
+                {/* Task Category Column */}
+                <div className="flex items-center justify-between">
                   <span
                     className={`px-3 py-1 rounded-full text-xs ${
                       task.category === "WORK"
@@ -394,8 +407,10 @@ export function TaskSection({
                   >
                     {task.category || "Work"}
                   </span>
+
+                  {/* Task Actions */}
+                  <TaskActions task={task} />
                 </div>
-                <TaskActions task={task} />
               </div>
             ))}
           </div>

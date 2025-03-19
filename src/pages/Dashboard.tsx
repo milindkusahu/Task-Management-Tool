@@ -15,6 +15,7 @@ import {
   LogoutIcon,
   MobileDocumentIcon,
   SearchIcon,
+  SortIcon,
 } from "../utils/icons";
 import { TaskDetailModal } from "../components/task/TaskDetailModal";
 
@@ -351,8 +352,7 @@ const Dashboard = () => {
               <div className="font-bold text-[#000000]/60 text-sm flex items-center">
                 Due on
                 <div className="ml-2 flex flex-col h-4 justify-between">
-                  <div className="w-2 h-1 bg-black"></div>
-                  <div className="w-2 h-1 bg-black"></div>
+                  <SortIcon />
                 </div>
               </div>
               <div className="font-bold text-[#000000]/60 text-sm">
