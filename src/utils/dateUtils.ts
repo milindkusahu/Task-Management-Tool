@@ -38,3 +38,50 @@ export function formatTimestamp(
 
   return new Date();
 }
+
+export function getRelativeDateLabel(dateString: string): string {
+  if (!dateString) return "No date";
+
+  const date = new Date(dateString);
+  if (isNaN(date.getTime())) return dateString;
+
+  const today = new Date();
+  const tomorrow = new Date(today);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+
+  const yesterday = new Date(today);
+  yesterday.setDate(yesterday.getDate() - 1);
+
+  // Reset time portion for comparison
+  const dateWithoutTime = new Date(
+    date.getFullYear(),
+    date.getMonth(),
+    date.getDate()
+  );
+  const todayWithoutTime = new Date(
+    today.getFullYear(),
+    today.getMonth(),
+    today.getDate()
+  );
+  const tomorrowWithoutTime = new Date(
+    tomorrow.getFullYear(),
+    tomorrow.getMonth(),
+    tomorrow.getDate()
+  );
+  const yesterdayWithoutTime = new Date(
+    yesterday.getFullYear(),
+    yesterday.getMonth(),
+    yesterday.getDate()
+  );
+
+  if (dateWithoutTime.getTime() === todayWithoutTime.getTime()) {
+    return "Today";
+  } else if (dateWithoutTime.getTime() === tomorrowWithoutTime.getTime()) {
+    return "Tomorrow";
+  } else if (dateWithoutTime.getTime() === yesterdayWithoutTime.getTime()) {
+    return "Yesterday";
+  }
+
+  // For other dates, return formatted date
+  return date.toLocaleDateString();
+}

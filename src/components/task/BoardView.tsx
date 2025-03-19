@@ -1,5 +1,4 @@
-import { useState, useRef } from "react";
-import { useTasks } from "../../hooks/useTasks";
+import { useState } from "react";
 import { MoreIcon, EditIcon, DeleteIcon, PlusIcon } from "../../utils/icons";
 
 interface BoardViewProps {
@@ -7,97 +6,78 @@ interface BoardViewProps {
     id: string;
     title: string;
     color: string;
+    status: string;
     tasks: Array<{
-      id: number;
+      id: string | number;
       title: string;
       status: string;
       category?: string;
       dueDate?: string;
+      description?: string;
     }>;
   }[];
+  onDragOver?: (e: React.DragEvent) => void;
+  onDrop?: (e: React.DragEvent, targetStatus: string) => void;
+  onDragStart?: (e: React.DragEvent, task: any) => void;
+  updateTask?: (data: { taskId: string; updates: any }) => void;
+  deleteTask?: (taskId: string) => void;
 }
 
-export function BoardView({ taskSections }: BoardViewProps) {
-  const { updateTask, deleteTask, createTask } = useTasks();
+export function BoardView({
+  taskSections,
+  onDragOver,
+  onDrop,
+  onDragStart,
+  updateTask,
+  deleteTask,
+}: BoardViewProps) {
   const [isAddingTask, setIsAddingTask] = useState<string | null>(null);
+  const [editingTaskId, setEditingTaskId] = useState<string | number | null>(
+    null
+  );
   const [newTask, setNewTask] = useState({
     title: "",
+    description: "",
     category: "WORK",
     dueDate: new Date().toISOString().split("T")[0],
   });
-  const [draggedTask, setDraggedTask] = useState<{
-    id: number;
-    sectionId: string;
-  } | null>(null);
 
-  const getStatusFromSectionId = (sectionId: string) => {
-    switch (sectionId) {
-      case "todo":
-        return "TO-DO";
-      case "inProgress":
-        return "IN-PROGRESS";
-      case "completed":
-        return "COMPLETED";
-      default:
-        return "TO-DO";
-    }
-  };
-
-  const handleDragStart = (
-    e: React.DragEvent,
-    taskId: number,
-    sectionId: string
-  ) => {
-    setDraggedTask({ id: taskId, sectionId });
-    // Set data for drag operation
-    e.dataTransfer.setData("text/plain", taskId.toString());
-    e.dataTransfer.effectAllowed = "move";
-  };
-
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = "move";
-  };
-
-  const handleDrop = (e: React.DragEvent, targetSectionId: string) => {
-    e.preventDefault();
-
-    if (!draggedTask) return;
-
-    const sourceSection = draggedTask.sectionId;
-
-    // If dropped in the same section, do nothing
-    if (sourceSection === targetSectionId) return;
-
-    const taskId = draggedTask.id;
-    const newStatus = getStatusFromSectionId(targetSectionId);
-
-    // Update the task status in Firestore
-    updateTask({
-      taskId: String(taskId),
-      updates: { status: newStatus },
+  // Start editing a task
+  const handleEditTask = (task: any, sectionId: string) => {
+    setEditingTaskId(task.id);
+    setIsAddingTask(sectionId);
+    setNewTask({
+      title: task.title,
+      description: task.description || "",
+      category: task.category || "WORK",
+      dueDate: task.dueDate || new Date().toISOString().split("T")[0],
     });
-
-    setDraggedTask(null);
   };
 
-  const handleAddTask = async (sectionId: string) => {
-    if (!newTask.title.trim()) return;
+  const handleAddTask = async (sectionId: string, status: string) => {
+    if (!newTask.title.trim() || !updateTask) return;
 
     try {
-      await createTask({
-        taskData: {
-          title: newTask.title,
-          description: "",
-          category: newTask.category,
-          status: getStatusFromSectionId(sectionId),
-          dueDate: newTask.dueDate,
-        },
-      });
+      if (editingTaskId) {
+        // Update existing task
+        await updateTask({
+          taskId: String(editingTaskId),
+          updates: {
+            title: newTask.title,
+            description: newTask.description,
+            status: status,
+            category: newTask.category,
+            dueDate: newTask.dueDate,
+          },
+        });
+
+        setEditingTaskId(null);
+      }
 
       setIsAddingTask(null);
       setNewTask({
         title: "",
+        description: "",
         category: "WORK",
         dueDate: new Date().toISOString().split("T")[0],
       });
@@ -106,12 +86,15 @@ export function BoardView({ taskSections }: BoardViewProps) {
     }
   };
 
-  const handleTaskDelete = async (taskId: number) => {
+  const handleTaskDelete = async (taskId: number | string) => {
+    if (!deleteTask) return;
+
     if (confirm("Are you sure you want to delete this task?")) {
       try {
         await deleteTask(String(taskId));
       } catch (error) {
         console.error("Error deleting task:", error);
+        alert("Could not delete task. Please try again later.");
       }
     }
   };
@@ -119,9 +102,11 @@ export function BoardView({ taskSections }: BoardViewProps) {
   const TaskCard = ({
     task,
     sectionId,
+    status,
   }: {
     task: BoardViewProps["taskSections"][0]["tasks"][0];
     sectionId: string;
+    status: string;
   }) => {
     const [showMenu, setShowMenu] = useState(false);
 
@@ -129,7 +114,7 @@ export function BoardView({ taskSections }: BoardViewProps) {
       <div
         className="bg-white rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow mb-2 cursor-move"
         draggable
-        onDragStart={(e) => handleDragStart(e, task.id, sectionId)}
+        onDragStart={(e) => onDragStart && onDragStart(e, task)}
       >
         <div className="flex items-start justify-between gap-2 mb-3">
           <div className="flex items-start gap-2 flex-1">
@@ -138,10 +123,14 @@ export function BoardView({ taskSections }: BoardViewProps) {
               className="mt-1.5 rounded border-gray-300"
               checked={task.status === "COMPLETED"}
               onChange={(e) => {
-                updateTask({
-                  taskId: String(task.id),
-                  updates: { status: e.target.checked ? "COMPLETED" : "TO-DO" },
-                });
+                if (updateTask) {
+                  updateTask({
+                    taskId: String(task.id),
+                    updates: {
+                      status: e.target.checked ? "COMPLETED" : "TO-DO",
+                    },
+                  });
+                }
               }}
               onClick={(e) => e.stopPropagation()}
             />
@@ -167,6 +156,7 @@ export function BoardView({ taskSections }: BoardViewProps) {
                     className="w-full px-4 py-2 text-left text-sm hover:bg-gray-100 flex items-center gap-2"
                     onClick={(e) => {
                       e.stopPropagation();
+                      handleEditTask(task, sectionId);
                       setShowMenu(false);
                     }}
                   >
@@ -189,9 +179,18 @@ export function BoardView({ taskSections }: BoardViewProps) {
             )}
           </div>
         </div>
+        {task.description && (
+          <p className="text-xs text-gray-600 mb-3 line-clamp-2">
+            {task.description}
+          </p>
+        )}
         <div className="flex items-center justify-between text-xs text-gray-500">
           <span>{task.dueDate || "Today"}</span>
-          <span className="px-2 py-1 bg-gray-100 rounded-full">
+          <span
+            className={`px-2 py-1 rounded-full ${
+              task.category === "WORK" ? "bg-purple-100" : "bg-orange-100"
+            }`}
+          >
             {task.category || "Work"}
           </span>
         </div>
@@ -210,9 +209,9 @@ export function BoardView({ taskSections }: BoardViewProps) {
           </div>
 
           <div
-            className="flex-1 bg-[#F1F1F1] rounded-b-xl border border-solid border-[#FFFAEA] p-2"
-            onDragOver={handleDragOver}
-            onDrop={(e) => handleDrop(e, section.id)}
+            className="flex-1 bg-[#F1F1F1] rounded-b-xl border border-solid border-[#FFFAEA] p-2 min-h-[400px]"
+            onDragOver={(e) => onDragOver && onDragOver(e)}
+            onDrop={(e) => onDrop && onDrop(e, section.status)}
           >
             {isAddingTask === section.id ? (
               <div className="bg-white rounded-lg p-3 mb-2">
@@ -226,38 +225,69 @@ export function BoardView({ taskSections }: BoardViewProps) {
                   className="w-full p-2 border border-gray-300 rounded mb-2"
                   autoFocus
                 />
-                <div className="flex items-center gap-2">
-                  <input
-                    type="date"
-                    value={newTask.dueDate}
-                    onChange={(e) =>
-                      setNewTask({ ...newTask, dueDate: e.target.value })
-                    }
-                    className="p-2 border border-gray-300 rounded"
-                  />
-                  <select
-                    value={newTask.category}
-                    onChange={(e) =>
-                      setNewTask({ ...newTask, category: e.target.value })
-                    }
-                    className="p-2 border border-gray-300 rounded"
-                  >
-                    <option value="WORK">Work</option>
-                    <option value="PERSONAL">Personal</option>
-                  </select>
+
+                <textarea
+                  placeholder="Description (optional)"
+                  value={newTask.description}
+                  onChange={(e) =>
+                    setNewTask({ ...newTask, description: e.target.value })
+                  }
+                  className="w-full p-2 border border-gray-300 rounded mb-2 min-h-[80px]"
+                />
+
+                <div className="flex flex-col gap-2 mb-2">
+                  <div>
+                    <label className="block text-sm text-gray-700 mb-1">
+                      Category
+                    </label>
+                    <select
+                      value={newTask.category}
+                      onChange={(e) =>
+                        setNewTask({ ...newTask, category: e.target.value })
+                      }
+                      className="w-full p-2 border border-gray-300 rounded"
+                    >
+                      <option value="WORK">Work</option>
+                      <option value="PERSONAL">Personal</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm text-gray-700 mb-1">
+                      Due Date
+                    </label>
+                    <input
+                      type="date"
+                      value={newTask.dueDate}
+                      onChange={(e) =>
+                        setNewTask({ ...newTask, dueDate: e.target.value })
+                      }
+                      className="w-full p-2 border border-gray-300 rounded"
+                    />
+                  </div>
                 </div>
+
                 <div className="flex justify-end gap-2 mt-3">
                   <button
                     className="px-3 py-1 text-gray-600 hover:bg-gray-100 rounded"
-                    onClick={() => setIsAddingTask(null)}
+                    onClick={() => {
+                      setIsAddingTask(null);
+                      setEditingTaskId(null);
+                      setNewTask({
+                        title: "",
+                        description: "",
+                        category: "WORK",
+                        dueDate: new Date().toISOString().split("T")[0],
+                      });
+                    }}
                   >
                     Cancel
                   </button>
                   <button
                     className="px-3 py-1 bg-[#7B1984] text-white rounded"
-                    onClick={() => handleAddTask(section.id)}
+                    onClick={() => handleAddTask(section.id, section.status)}
                   >
-                    Add
+                    {editingTaskId ? "Update" : "Add"}
                   </button>
                 </div>
               </div>
@@ -275,7 +305,12 @@ export function BoardView({ taskSections }: BoardViewProps) {
 
             <div>
               {section.tasks.map((task) => (
-                <TaskCard key={task.id} task={task} sectionId={section.id} />
+                <TaskCard
+                  key={task.id}
+                  task={task}
+                  sectionId={section.id}
+                  status={section.status}
+                />
               ))}
             </div>
 

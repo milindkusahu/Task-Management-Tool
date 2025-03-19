@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useTasks } from "../../hooks/useTasks";
+import { formatDate } from "../../utils/dateUtils";
 import {
   PlusIcon,
   DateIcon,
@@ -15,13 +15,20 @@ interface TaskSectionProps {
   title: string;
   color: string;
   tasks: Array<{
-    id: number | string;
+    id: string | number;
     title: string;
     status: string;
     dueDate?: string;
     category?: string;
+    description?: string;
+    onTaskClick?: (task: any) => void;
   }>;
   defaultOpen?: boolean;
+  onDragOver?: (e: React.DragEvent) => void;
+  onDrop?: (e: React.DragEvent) => void;
+  onDragStart?: (e: React.DragEvent, task: any) => void;
+  updateTask?: (data: { taskId: string; updates: any }) => void;
+  deleteTask?: (taskId: string) => void;
 }
 
 export function TaskSection({
@@ -29,11 +36,21 @@ export function TaskSection({
   color,
   tasks,
   defaultOpen = true,
+  onDragOver,
+  onDrop,
+  onDragStart,
+  updateTask,
+  deleteTask,
+  onTaskClick,
 }: TaskSectionProps) {
   const [isOpen, setIsOpen] = useState(defaultOpen);
   const [isAddingTask, setIsAddingTask] = useState(false);
+  const [editingTaskId, setEditingTaskId] = useState<string | number | null>(
+    null
+  );
   const [newTask, setNewTask] = useState({
     title: "",
+    description: "",
     status: title.includes("Todo")
       ? "TO-DO"
       : title.includes("In-Progress")
@@ -42,25 +59,46 @@ export function TaskSection({
     category: "WORK",
     dueDate: new Date().toISOString().split("T")[0],
   });
-  const { createTask, deleteTask, updateTask } = useTasks();
 
-  const handleAddTask = async () => {
+  // Start editing a task
+  const handleEditTask = (task: any) => {
+    setEditingTaskId(task.id);
+    setNewTask({
+      title: task.title,
+      description: task.description || "",
+      status: task.status,
+      category: task.category || "WORK",
+      dueDate: task.dueDate || new Date().toISOString().split("T")[0],
+    });
+    setIsAddingTask(true);
+  };
+
+  // Handle form submission (create or update)
+  const handleTaskSubmit = async () => {
     if (!newTask.title.trim()) return;
 
     try {
-      await createTask({
-        taskData: {
-          title: newTask.title,
-          description: "",
-          category: newTask.category,
-          status: newTask.status,
-          dueDate: newTask.dueDate,
-        },
-      });
+      if (editingTaskId && updateTask) {
+        // Update existing task
+        await updateTask({
+          taskId: String(editingTaskId),
+          updates: {
+            title: newTask.title,
+            description: newTask.description,
+            status: newTask.status,
+            category: newTask.category,
+            dueDate: newTask.dueDate,
+          },
+        });
 
+        setEditingTaskId(null);
+      }
+
+      // Reset form state
       setIsAddingTask(false);
       setNewTask({
         title: "",
+        description: "",
         status: title.includes("Todo")
           ? "TO-DO"
           : title.includes("In-Progress")
@@ -70,17 +108,24 @@ export function TaskSection({
         dueDate: new Date().toISOString().split("T")[0],
       });
     } catch (error) {
-      console.error("Error adding task:", error);
+      console.error("Error saving task:", error);
     }
   };
 
   const handleTaskDelete = async (taskId: number | string) => {
+    if (!deleteTask) return;
+
     if (confirm("Are you sure you want to delete this task?")) {
       try {
-        console.log("Task ID for deletion:", taskId);
-        await deleteTask(String(taskId));
+        // Convert to string and log the ID
+        const taskIdStr = String(taskId);
+        console.log("Task ID for deletion:", taskIdStr);
+
+        // Try the deletion
+        await deleteTask(taskIdStr);
       } catch (error) {
         console.error("Error deleting task:", error);
+        // Show error to user
         alert("Could not delete task. Please try again later.");
       }
     }
@@ -90,6 +135,8 @@ export function TaskSection({
     taskId: number | string,
     newStatus: string
   ) => {
+    if (!updateTask) return;
+
     try {
       await updateTask({
         taskId: String(taskId),
@@ -118,7 +165,7 @@ export function TaskSection({
               <button
                 className="w-full px-4 py-2 text-left text-sm hover:bg-gray-100 flex items-center gap-2"
                 onClick={() => {
-                  // Edit task logic (implement later)
+                  handleEditTask(task);
                   setShowMenu(false);
                 }}
               >
@@ -163,7 +210,11 @@ export function TaskSection({
 
       {/* Section Content */}
       {isOpen && (
-        <div className="bg-[#F1F1F1] rounded-b-xl border border-solid border-[#FFFAEA] pt-0 px-0">
+        <div
+          className="bg-[#F1F1F1] rounded-b-xl border border-solid border-[#FFFAEA] pt-0 px-0"
+          onDragOver={onDragOver}
+          onDrop={onDrop}
+        >
           <div className="border-t border-solid border-[#FFFAEA]">
             {!isAddingTask ? (
               <div
@@ -177,47 +228,99 @@ export function TaskSection({
               </div>
             ) : (
               <div className="p-4 bg-white border-b">
-                <div className="flex items-center gap-4">
+                <div className="flex flex-col gap-4">
                   <input
                     placeholder="Task Title"
                     value={newTask.title}
                     onChange={(e) =>
                       setNewTask({ ...newTask, title: e.target.value })
                     }
-                    className="flex-1 border border-gray-300 rounded-md px-3 py-2"
+                    className="w-full border border-gray-300 rounded-md px-3 py-2"
                     autoFocus
                   />
 
-                  <input
-                    type="date"
-                    value={newTask.dueDate}
+                  <textarea
+                    placeholder="Description (optional)"
+                    value={newTask.description}
                     onChange={(e) =>
-                      setNewTask({ ...newTask, dueDate: e.target.value })
+                      setNewTask({ ...newTask, description: e.target.value })
                     }
-                    className="border border-gray-300 rounded-md px-3 py-2"
+                    className="w-full border border-gray-300 rounded-md px-3 py-2 min-h-[80px]"
                   />
 
-                  <select
-                    value={newTask.category}
-                    onChange={(e) =>
-                      setNewTask({ ...newTask, category: e.target.value })
-                    }
-                    className="border border-gray-300 rounded-md px-3 py-2"
-                  >
-                    <option value="WORK">WORK</option>
-                    <option value="PERSONAL">PERSONAL</option>
-                  </select>
+                  <div className="flex items-center gap-4">
+                    <div className="flex-1">
+                      <label className="block text-sm text-gray-700 mb-1">
+                        Status
+                      </label>
+                      <select
+                        value={newTask.status}
+                        onChange={(e) =>
+                          setNewTask({ ...newTask, status: e.target.value })
+                        }
+                        className="w-full border border-gray-300 rounded-md px-3 py-2"
+                      >
+                        <option value="TO-DO">To Do</option>
+                        <option value="IN-PROGRESS">In Progress</option>
+                        <option value="COMPLETED">Completed</option>
+                      </select>
+                    </div>
+
+                    <div className="flex-1">
+                      <label className="block text-sm text-gray-700 mb-1">
+                        Category
+                      </label>
+                      <select
+                        value={newTask.category}
+                        onChange={(e) =>
+                          setNewTask({ ...newTask, category: e.target.value })
+                        }
+                        className="w-full border border-gray-300 rounded-md px-3 py-2"
+                      >
+                        <option value="WORK">Work</option>
+                        <option value="PERSONAL">Personal</option>
+                      </select>
+                    </div>
+
+                    <div className="flex-1">
+                      <label className="block text-sm text-gray-700 mb-1">
+                        Due Date
+                      </label>
+                      <input
+                        type="date"
+                        value={newTask.dueDate}
+                        onChange={(e) =>
+                          setNewTask({ ...newTask, dueDate: e.target.value })
+                        }
+                        className="w-full border border-gray-300 rounded-md px-3 py-2"
+                      />
+                    </div>
+                  </div>
                 </div>
                 <div className="flex items-center gap-2 mt-4">
                   <button
                     className="bg-[#7B1984] text-white px-6 py-2 rounded-md font-semibold"
-                    onClick={handleAddTask}
+                    onClick={handleTaskSubmit}
                   >
-                    ADD
+                    {editingTaskId ? "UPDATE" : "ADD"}
                   </button>
                   <button
                     className="px-6 py-2 rounded-md text-gray-700 hover:bg-gray-100"
-                    onClick={() => setIsAddingTask(false)}
+                    onClick={() => {
+                      setIsAddingTask(false);
+                      setEditingTaskId(null);
+                      setNewTask({
+                        title: "",
+                        description: "",
+                        status: title.includes("Todo")
+                          ? "TO-DO"
+                          : title.includes("In-Progress")
+                          ? "IN-PROGRESS"
+                          : "COMPLETED",
+                        category: "WORK",
+                        dueDate: new Date().toISOString().split("T")[0],
+                      });
+                    }}
                   >
                     CANCEL
                   </button>
@@ -234,17 +337,10 @@ export function TaskSection({
                     ? task.id
                     : `task-${index}`
                 }
-                className="bg-white rounded-lg p-3 flex items-center gap-4"
+                className="bg-white rounded-lg p-3 flex items-center gap-4 hover:bg-gray-50 cursor-pointer"
                 draggable={true}
-                onDragStart={(e) => {
-                  e.dataTransfer.setData(
-                    "text/plain",
-                    JSON.stringify({
-                      id: task.id,
-                      status: task.status,
-                    })
-                  );
-                }}
+                onDragStart={(e) => onDragStart && onDragStart(e, task)}
+                onClick={() => onTaskClick && onTaskClick(task)}
               >
                 <input
                   type="checkbox"
@@ -262,15 +358,34 @@ export function TaskSection({
                     <DragIcon className="w-4 h-4 text-gray-400" />
                     <span className="text-sm text-gray-800">{task.title}</span>
                   </div>
+                  {task.description && (
+                    <p className="text-xs text-gray-500 mt-1 line-clamp-1">
+                      {task.description}
+                    </p>
+                  )}
                 </div>
                 <div className="text-sm text-gray-500">{task.dueDate}</div>
                 <div className="min-w-[100px]">
-                  <span className="px-3 py-1 bg-gray-100 rounded-full text-xs">
+                  <span
+                    className={`px-3 py-1 rounded-full text-xs ${
+                      task.status === "COMPLETED"
+                        ? "bg-green-100"
+                        : task.status === "IN-PROGRESS"
+                        ? "bg-blue-100"
+                        : "bg-gray-100"
+                    }`}
+                  >
                     {task.status}
                   </span>
                 </div>
                 <div className="min-w-[100px]">
-                  <span className="px-3 py-1 bg-gray-100 rounded-full text-xs">
+                  <span
+                    className={`px-3 py-1 rounded-full text-xs ${
+                      task.category === "WORK"
+                        ? "bg-purple-100"
+                        : "bg-orange-100"
+                    }`}
+                  >
                     {task.category || "Work"}
                   </span>
                 </div>
