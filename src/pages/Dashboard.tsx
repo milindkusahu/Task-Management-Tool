@@ -302,28 +302,32 @@ const Dashboard = () => {
             <h1 className="font-semibold text-[#2F2F2F] text-2xl">TaskBuddy</h1>
           </div>
 
-          <div className="flex space-x-4">
+          <div className="flex space-x-8">
             <button
               onClick={() => setView("list")}
-              className={`flex items-center gap-1 font-semibold ${
-                view === "list" ? "text-black" : "text-[#231F20] opacity-80"
+              className={`flex items-center gap-2 pb-2 font-medium text-base relative ${
+                view === "list" ? "text-black" : "text-gray-500"
               }`}
             >
-              <ListIcon className="w-4 h-4" />
-              List
+              <ListIcon width={16} height={16} />
+              <span>List</span>
+              {view === "list" && (
+                <div className="absolute bottom-0 left-0 w-full h-[1.5px] bg-black rounded-sm"></div>
+              )}
             </button>
             <button
               onClick={() => setView("board")}
-              className={`flex items-center gap-1 font-semibold ${
-                view === "board" ? "text-black" : "text-[#231F20] opacity-80"
+              className={`flex items-center gap-2 pb-2 font-medium text-base relative ${
+                view === "board" ? "text-black" : "text-gray-500"
               }`}
             >
-              <BoardIcon className="w-4 h-4" />
-              Board
+              <BoardIcon width={20} height={20} />
+              <span>Board</span>
+              {view === "board" && (
+                <div className="absolute bottom-0 left-0 w-full h-[1.5px] bg-black rounded-sm"></div>
+              )}
             </button>
           </div>
-
-          <div className="w-[47px] h-px bg-black rounded-sm ml-2" />
         </div>
 
         <div className="flex flex-col items-end">
