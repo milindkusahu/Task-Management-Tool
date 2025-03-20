@@ -1,13 +1,13 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { useAuthContext } from "../hooks/useAuthContext";
-import { GoogleIcon, MobileDocumentIcon } from "../utils/icons";
+import { useAuthContext } from "../../hooks/useAuthContext";
+import { GoogleIcon, MobileDocumentIcon } from "../../utils/icons";
+import { Button, Spinner } from "../../components";
 
 const Home = () => {
   const { user, loading, error, signInWithGoogle } = useAuthContext();
   const navigate = useNavigate();
 
-  // Redirect to dashboard if user is already logged in
   useEffect(() => {
     if (user) {
       navigate("/dashboard");
@@ -64,20 +64,25 @@ const Home = () => {
               </div>
             )}
 
-            <button
+            <Button
               onClick={handleGoogleSignIn}
               disabled={loading}
-              className="w-full flex items-center justify-center gap-3 py-5 px-4 bg-[#292929] text-white rounded-2xl hover:bg-black transition-colors duration-200 font-medium text-2xl"
+              size="lg"
+              fullWidth
+              className="py-5 bg-[#292929] hover:bg-black text-2xl"
             >
               {loading ? (
-                <span>Loading...</span>
+                <div className="flex items-center justify-center gap-2">
+                  <Spinner size="sm" color="white" />
+                  <span>Loading...</span>
+                </div>
               ) : (
-                <>
+                <div className="flex items-center justify-center gap-3">
                   <GoogleIcon width={30} height={30} />
-                  Continue with Google
-                </>
+                  <span>Continue with Google</span>
+                </div>
               )}
-            </button>
+            </Button>
           </div>
 
           {/* Right Side - Dashboard Preview Image (visible only on desktop) */}

@@ -1,0 +1,237 @@
+import React, { useState } from "react";
+import { Task } from "../../../types/task";
+import { MoreIcon, EditIcon, DeleteIcon } from "../../../utils/icons";
+
+export interface TaskCardProps {
+  task: Task;
+  variant?: "list" | "board";
+  onStatusChange?: (taskId: string | number, newStatus: string) => void;
+  onEdit?: (task: Task) => void;
+  onDelete?: (taskId: string | number) => void;
+  onClick?: (task: Task) => void;
+  isDraggable?: boolean;
+  onDragStart?: (e: React.DragEvent, task: Task) => void;
+}
+
+const TaskCard: React.FC<TaskCardProps> = ({
+  task,
+  variant = "list",
+  onStatusChange,
+  onEdit,
+  onDelete,
+  onClick,
+  isDraggable = true,
+  onDragStart,
+}) => {
+  const [showMenu, setShowMenu] = useState(false);
+
+  const handleStatusChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    e.stopPropagation();
+    if (onStatusChange) {
+      onStatusChange(task.id!, e.target.checked ? "COMPLETED" : "TO-DO");
+    }
+  };
+
+  const handleEdit = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (onEdit) {
+      onEdit(task);
+    }
+    setShowMenu(false);
+  };
+
+  const handleDelete = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (onDelete && task.id) {
+      onDelete(task.id);
+    }
+    setShowMenu(false);
+  };
+
+  const handleMenuToggle = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setShowMenu(!showMenu);
+  };
+
+  const handleCardClick = () => {
+    if (onClick) {
+      onClick(task);
+    }
+  };
+
+  const StatusBadge = ({ status }: { status: string }) => {
+    let bgColor = "bg-gray-100";
+    let textColor = "text-gray-700";
+
+    if (status === "COMPLETED") {
+      bgColor = "bg-green-100";
+      textColor = "text-green-700";
+    } else if (status === "IN-PROGRESS") {
+      bgColor = "bg-blue-100";
+      textColor = "text-blue-700";
+    }
+
+    return (
+      <span
+        className={`px-2 py-1 rounded-full text-xs font-medium ${bgColor} ${textColor}`}
+      >
+        {status === "IN-PROGRESS" ? "IN-PROGRESS" : status}
+      </span>
+    );
+  };
+
+  const CategoryBadge = ({ category }: { category?: string }) => {
+    const bgColor = category === "WORK" ? "bg-purple-100" : "bg-orange-100";
+    const textColor =
+      category === "WORK" ? "text-purple-700" : "text-orange-700";
+
+    return (
+      <span
+        className={`px-2 py-1 rounded-full text-xs font-medium ${bgColor} ${textColor}`}
+      >
+        {category || "Personal"}
+      </span>
+    );
+  };
+
+  if (variant === "board") {
+    return (
+      <div
+        className="bg-white border border-gray-200 rounded-md p-3 mb-2 cursor-pointer hover:bg-gray-50"
+        onClick={handleCardClick}
+        draggable={isDraggable}
+        onDragStart={(e) => onDragStart && onDragStart(e, task)}
+      >
+        <div className="flex items-start justify-between gap-2 mb-2">
+          <div className="flex items-start gap-2 flex-1">
+            <input
+              type="checkbox"
+              className="mt-1 h-4 w-4 rounded border-gray-300"
+              checked={task.status === "COMPLETED"}
+              onChange={handleStatusChange}
+              onClick={(e) => e.stopPropagation()}
+            />
+            <span className="text-sm text-gray-800 font-medium">
+              {task.title}
+            </span>
+          </div>
+          <div className="relative">
+            <button
+              className="p-1 hover:bg-gray-100 rounded"
+              onClick={handleMenuToggle}
+            >
+              <MoreIcon className="w-4 h-4 text-gray-500" />
+            </button>
+
+            {showMenu && (
+              <div className="absolute right-0 mt-1 w-36 bg-white rounded-md shadow-lg z-10">
+                <div className="py-1">
+                  <button
+                    className="w-full px-4 py-2 text-left text-sm hover:bg-gray-100 flex items-center gap-2"
+                    onClick={handleEdit}
+                  >
+                    <EditIcon className="w-4 h-4" />
+                    <span>Edit</span>
+                  </button>
+                  <button
+                    className="w-full px-4 py-2 text-left text-sm hover:bg-gray-100 text-red-600 flex items-center gap-2"
+                    onClick={handleDelete}
+                  >
+                    <DeleteIcon className="w-4 h-4" />
+                    <span>Delete</span>
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {task.description && (
+          <p className="text-xs text-gray-600 mb-2 ml-6 line-clamp-2">
+            {task.description}
+          </p>
+        )}
+
+        <div className="flex items-center justify-between text-xs text-gray-500 ml-6">
+          <span>{task.dueDate || "No date"}</span>
+          <CategoryBadge category={task.category} />
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div
+      className="bg-white border-b border-gray-200 px-4 py-3 grid grid-cols-4 gap-4 hover:bg-gray-50 cursor-pointer"
+      onClick={handleCardClick}
+      draggable={isDraggable}
+      onDragStart={(e) => onDragStart && onDragStart(e, task)}
+    >
+      <div className="flex items-center gap-2">
+        <input
+          type="checkbox"
+          className="h-4 w-4 rounded border-gray-300"
+          checked={task.status === "COMPLETED"}
+          onChange={handleStatusChange}
+          onClick={(e) => e.stopPropagation()}
+        />
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-gray-800 font-medium truncate">
+              {task.title}
+            </span>
+          </div>
+          {task.description && (
+            <p className="text-xs text-gray-500 mt-1 line-clamp-1">
+              {task.description}
+            </p>
+          )}
+        </div>
+      </div>
+
+      <div className="text-sm text-gray-500 flex items-center">
+        {task.dueDate}
+      </div>
+
+      <div className="flex items-center">
+        <StatusBadge status={task.status} />
+      </div>
+
+      <div className="flex items-center justify-between">
+        <CategoryBadge category={task.category} />
+
+        <div className="relative">
+          <button
+            className="p-1 hover:bg-gray-100 rounded"
+            onClick={handleMenuToggle}
+          >
+            <MoreIcon className="w-5 h-5 text-gray-500" />
+          </button>
+
+          {showMenu && (
+            <div className="absolute right-0 mt-1 w-36 bg-white rounded-md shadow-lg z-10">
+              <div className="py-1">
+                <button
+                  className="w-full px-4 py-2 text-left text-sm hover:bg-gray-100 flex items-center gap-2"
+                  onClick={handleEdit}
+                >
+                  <EditIcon className="w-4 h-4" />
+                  <span>Edit</span>
+                </button>
+                <button
+                  className="w-full px-4 py-2 text-left text-sm hover:bg-gray-100 text-red-600 flex items-center gap-2"
+                  onClick={handleDelete}
+                >
+                  <DeleteIcon className="w-4 h-4" />
+                  <span>Delete</span>
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default TaskCard;

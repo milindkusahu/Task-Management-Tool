@@ -16,13 +16,11 @@ import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { db, storage, auth } from "../firebase/config";
 import { Task } from "../types/task";
 
-// Create a new task
 export async function createTask(
   taskData: Omit<Task, "id">,
   attachmentFiles?: File[]
 ): Promise<string> {
   try {
-    // Handle file uploads
     const attachments = [];
 
     if (attachmentFiles && attachmentFiles.length > 0) {
@@ -37,7 +35,6 @@ export async function createTask(
       }
     }
 
-    // Create task document
     const taskRef = await addDoc(collection(db, "tasks"), {
       ...taskData,
       attachments,
@@ -52,13 +49,11 @@ export async function createTask(
   }
 }
 
-// Get tasks by user and status
 export async function getTasksByStatus(
   userId: string,
   status: string
 ): Promise<Task[]> {
   try {
-    // Simplified query without ordering until indexes are built
     const tasksQuery = query(
       collection(db, "tasks"),
       where("userId", "==", userId),
@@ -71,7 +66,6 @@ export async function getTasksByStatus(
     querySnapshot.forEach((doc) => {
       const data = doc.data();
 
-      // Format date fields properly
       const formattedData = {
         ...data,
         id: doc.id,
@@ -92,7 +86,6 @@ export async function getTasksByStatus(
       tasks.push(formattedData as Task);
     });
 
-    // Sort in-memory instead of in the query
     return tasks.sort((a, b) => {
       const dateA = a.createdAt instanceof Date ? a.createdAt : new Date();
       const dateB = b.createdAt instanceof Date ? b.createdAt : new Date();
@@ -100,11 +93,10 @@ export async function getTasksByStatus(
     });
   } catch (error) {
     console.error(`Error fetching ${status} tasks:`, error);
-    return []; // Return empty array instead of throwing to prevent UI errors
+    return [];
   }
 }
 
-// Update a task
 export async function updateTask(
   taskId: string,
   updates: Partial<Task>
@@ -121,12 +113,10 @@ export async function updateTask(
   }
 }
 
-// Delete a task
 export async function deleteTask(taskId: string): Promise<void> {
   try {
     const taskRef = doc(db, "tasks", taskId);
 
-    // Get the task document first to check permissions
     const taskDoc = await getDoc(taskRef);
 
     if (!taskDoc.exists()) {
@@ -136,13 +126,11 @@ export async function deleteTask(taskId: string): Promise<void> {
     const taskData = taskDoc.data();
     const currentUser = auth.currentUser;
 
-    // Verify that the task belongs to the current user
     if (!currentUser || taskData.userId !== currentUser.uid) {
       console.error("Permission denied: Task doesn't belong to current user");
       throw new Error("Permission denied: Task doesn't belong to current user");
     }
 
-    // If we get here, the task belongs to the current user
     await deleteDoc(taskRef);
   } catch (error) {
     console.error("Error deleting task:", error);
