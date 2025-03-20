@@ -19,6 +19,7 @@ import TaskFilters, {
 import TaskViewToggle, {
   TaskViewToggleProps,
 } from "./TaskViewToggle/TaskViewToggle";
+import { BatchActions, BatchActionsProps } from "./BatchActions";
 
 export {
   TaskCard,
@@ -30,6 +31,7 @@ export {
   CreateTaskModal,
   TaskFilters,
   TaskViewToggle,
+  BatchActions,
 };
 
 export type {
@@ -45,4 +47,5 @@ export type {
   TaskFiltersProps,
   TaskFilterValues,
   TaskViewToggleProps,
+  BatchActionsProps,
 };

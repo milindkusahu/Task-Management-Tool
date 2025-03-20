@@ -11,6 +11,7 @@ import {
   Spinner,
   Divider,
   NoResults,
+  SortIndicator,
 } from "./common/index";
 
 import { Header, Container, PageLayout } from "./layout/index";
@@ -25,6 +26,7 @@ import {
   CreateTaskModal,
   TaskFilters,
   TaskViewToggle,
+  BatchActions,
 } from "./task/index";
 
 export {
@@ -41,6 +43,8 @@ export {
   Spinner,
   Divider,
   NoResults,
+  SortIndicator,
+
   // Layout
   Header,
   Container,
@@ -56,6 +60,9 @@ export {
   CreateTaskModal,
   TaskFilters,
   TaskViewToggle,
+
+  // Batch Actions
+  BatchActions,
 };
 
 export type { ButtonProps, IconButtonProps } from "./common/Button";
@@ -85,3 +92,4 @@ export type { TaskDetailModalProps, ActivityLogItem } from "./task/TaskDetail";
 export type { CreateTaskModalProps } from "./task/TaskCreate";
 export type { TaskFiltersProps, TaskFilterValues } from "./task/TaskFilters";
 export type { TaskViewToggleProps } from "./task/TaskViewToggle";
+export type { BatchActionsProps } from "./task/BatchActions";
