@@ -1,7 +1,7 @@
 import React from "react";
 import { TaskCard } from "../TaskCard";
 import { Task } from "../../../types/task";
-import { PlusIcon, ChevronUpIcon, ChevronDownIcon } from "../../../utils/icons";
+import { PlusIcon, ChevronUpIcon } from "../../../utils/icons";
 
 export interface TaskBoardColumnProps {
   id: string;
@@ -16,6 +16,9 @@ export interface TaskBoardColumnProps {
   onTaskDelete?: (taskId: string) => void;
   onTaskClick?: (task: Task) => void;
   onAddTaskClick?: () => void;
+  isMultiSelectActive?: boolean;
+  selectedTaskIds?: Set<string>;
+  onToggleTaskSelection?: (taskId: string) => void;
 }
 
 const TaskBoardColumn: React.FC<TaskBoardColumnProps> = ({
@@ -31,6 +34,9 @@ const TaskBoardColumn: React.FC<TaskBoardColumnProps> = ({
   onTaskDelete,
   onTaskClick,
   onAddTaskClick,
+  isMultiSelectActive = false,
+  selectedTaskIds = new Set(),
+  onToggleTaskSelection,
 }) => {
   // Extract count from title if it has a format like "Todo (3)"
   const renderTitle = () => {
@@ -75,7 +81,7 @@ const TaskBoardColumn: React.FC<TaskBoardColumnProps> = ({
         {/* Add task button */}
         <button
           className="w-full bg-white border border-gray-200 rounded-md p-2 mb-2 flex items-center gap-2 hover:bg-gray-50 cursor-pointer text-left"
-          onClick={onAddTaskClick}
+          onClick={() => onAddTaskClick && onAddTaskClick()}
         >
           <PlusIcon className="w-4 h-4" />
           <span className="font-medium text-gray-700 text-sm">ADD TASK</span>
@@ -91,6 +97,11 @@ const TaskBoardColumn: React.FC<TaskBoardColumnProps> = ({
             onDelete={onTaskDelete}
             onClick={onTaskClick}
             onDragStart={onDragStart}
+            isMultiSelectActive={isMultiSelectActive}
+            isSelected={
+              task.id ? selectedTaskIds.has(task.id.toString()) : false
+            }
+            onToggleSelect={onToggleTaskSelection}
           />
         ))}
 

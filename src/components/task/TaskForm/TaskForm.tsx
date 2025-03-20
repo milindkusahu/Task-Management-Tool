@@ -8,6 +8,7 @@ export interface TaskFormProps {
   onSubmit: (taskData: Omit<Task, "id" | "userId">) => void;
   onCancel: () => void;
   includeAttachments?: boolean;
+  includeTags?: boolean;
 }
 
 const TaskForm: React.FC<TaskFormProps> = ({
@@ -16,6 +17,7 @@ const TaskForm: React.FC<TaskFormProps> = ({
   onSubmit,
   onCancel,
   includeAttachments = false,
+  includeTags = true,
 }) => {
   const [formData, setFormData] = useState({
     title: task?.title || "",
@@ -23,9 +25,12 @@ const TaskForm: React.FC<TaskFormProps> = ({
     status: task?.status || initialStatus,
     category: task?.category || "WORK",
     dueDate: task?.dueDate || new Date().toISOString().split("T")[0],
+    tags: task?.tags || [],
   });
 
   const [attachments, setAttachments] = useState<File[]>([]);
+  const [newTag, setNewTag] = useState("");
+
   const [errors, setErrors] = useState<{
     title?: string;
     dueDate?: string;
@@ -42,6 +47,7 @@ const TaskForm: React.FC<TaskFormProps> = ({
       [name]: value,
     }));
 
+    // Clear error when field is edited
     if (errors[name as keyof typeof errors]) {
       setErrors((prev) => ({
         ...prev,
@@ -54,6 +60,26 @@ const TaskForm: React.FC<TaskFormProps> = ({
     if (e.target.files) {
       setAttachments(Array.from(e.target.files));
     }
+  };
+
+  const handleTagAdd = () => {
+    if (!newTag.trim()) return;
+
+    if (!formData.tags.includes(newTag.trim())) {
+      setFormData({
+        ...formData,
+        tags: [...formData.tags, newTag.trim()],
+      });
+    }
+
+    setNewTag("");
+  };
+
+  const handleTagRemove = (tagToRemove: string) => {
+    setFormData({
+      ...formData,
+      tags: formData.tags.filter((tag) => tag !== tagToRemove),
+    });
   };
 
   const validateForm = () => {
@@ -85,6 +111,7 @@ const TaskForm: React.FC<TaskFormProps> = ({
       status: formData.status,
       category: formData.category,
       dueDate: formData.dueDate,
+      tags: formData.tags,
       ...(includeAttachments && attachments.length > 0 && { attachments }),
     });
   };
@@ -160,6 +187,60 @@ const TaskForm: React.FC<TaskFormProps> = ({
           fullWidth
         />
       </div>
+
+      {includeTags && (
+        <div className="mb-4">
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Tags
+          </label>
+          <div className="flex mb-2">
+            <input
+              type="text"
+              value={newTag}
+              onChange={(e) => setNewTag(e.target.value)}
+              placeholder="Add a tag"
+              className="flex-1 border border-gray-300 rounded-l-md px-3 py-2 focus:outline-none focus:ring-1 focus:ring-[#7B1984] focus:border-[#7B1984]"
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  handleTagAdd();
+                }
+              }}
+            />
+            <button
+              type="button"
+              onClick={handleTagAdd}
+              className="bg-[#7B1984] text-white px-4 py-2 rounded-r-md"
+            >
+              Add
+            </button>
+          </div>
+
+          {formData.tags.length > 0 ? (
+            <div className="flex flex-wrap gap-2 mb-2">
+              {formData.tags.map((tag) => (
+                <span
+                  key={tag}
+                  className="px-2 py-1 bg-purple-100 text-purple-800 rounded-full text-sm flex items-center"
+                >
+                  {tag}
+                  <button
+                    type="button"
+                    onClick={() => handleTagRemove(tag)}
+                    className="ml-1 text-purple-800 hover:text-purple-900"
+                  >
+                    ×
+                  </button>
+                </span>
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm text-gray-500">
+              No tags added. Tags help you organize and filter your tasks.
+            </p>
+          )}
+        </div>
+      )}
 
       {includeAttachments && (
         <div>

@@ -19,6 +19,9 @@ export interface TaskBoardProps {
   onTaskDelete?: (taskId: string) => void;
   onTaskClick?: (task: Task) => void;
   onTaskCreate?: (taskData: Omit<Task, "id" | "userId">) => void;
+  isMultiSelectActive?: boolean;
+  selectedTaskIds?: Set<string>;
+  onToggleTaskSelection?: (taskId: string) => void;
 }
 
 const TaskBoard: React.FC<TaskBoardProps> = ({
@@ -30,19 +33,11 @@ const TaskBoard: React.FC<TaskBoardProps> = ({
   onTaskDelete,
   onTaskClick,
   onTaskCreate,
+  isMultiSelectActive = false,
+  selectedTaskIds = new Set(),
+  onToggleTaskSelection,
 }) => {
-  const handleAddTaskClick = () => {
-    if (onTaskCreate) {
-      onTaskCreate({
-        title: "",
-        description: "",
-        status: "TO-DO",
-        category: "WORK",
-        dueDate: new Date().toISOString().split("T")[0],
-      });
-    }
-  };
-
+  // Handle column drop
   const handleColumnDrop = (e: React.DragEvent, status: string) => {
     if (onDrop) {
       onDrop(e, status);
@@ -65,7 +60,19 @@ const TaskBoard: React.FC<TaskBoardProps> = ({
           onTaskUpdate={onTaskUpdate}
           onTaskDelete={onTaskDelete}
           onTaskClick={onTaskClick}
-          onAddTaskClick={handleAddTaskClick}
+          onAddTaskClick={() =>
+            onTaskCreate &&
+            onTaskCreate({
+              title: "",
+              description: "",
+              status: column.status,
+              category: "WORK",
+              dueDate: new Date().toISOString().split("T")[0],
+            })
+          }
+          isMultiSelectActive={isMultiSelectActive}
+          selectedTaskIds={selectedTaskIds}
+          onToggleTaskSelection={onToggleTaskSelection}
         />
       ))}
     </div>

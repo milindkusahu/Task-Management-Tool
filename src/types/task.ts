@@ -8,6 +8,7 @@ export interface Task {
   category: string;
   dueDate: string;
   userId: string;
+  tags?: string[];
   attachments?: Array<{
     name: string;
     url: string;
@@ -22,5 +23,6 @@ export interface CreateTaskFormData {
   category: string;
   dueDate: string;
   status: string;
+  tags?: string[];
   attachments?: File[];
 }
