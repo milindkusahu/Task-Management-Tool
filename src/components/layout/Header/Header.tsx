@@ -1,20 +1,49 @@
-import React from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuthContext } from "../../../hooks/useAuthContext";
-import { MobileDocumentIcon, LogoutIcon } from "../../../utils/icons";
-import { Button } from "../../common/Button";
+import {
+  MobileDocumentIcon,
+  LogoutIcon,
+  DragIcon,
+  ChevronDownIcon,
+} from "../../../utils/icons";
 
 export interface HeaderProps {
   showAddTaskButton?: boolean;
   onAddTaskClick?: () => void;
 }
 
-const Header: React.FC<HeaderProps> = ({
-  showAddTaskButton = true,
-  onAddTaskClick,
-}) => {
+const Header: React.FC<HeaderProps> = () => {
   const { user, logout } = useAuthContext();
   const navigate = useNavigate();
+
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target as Node)
+      ) {
+        setIsDropdownOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const handleProfileClick = () => {
+    navigate("/profile");
+    setIsDropdownOpen(false);
+  };
+
+  const handleLogoutClick = () => {
+    logout();
+    setIsDropdownOpen(false);
+  };
 
   return (
     <header className="border-b border-gray-200 bg-white py-4 px-4">
@@ -27,22 +56,12 @@ const Header: React.FC<HeaderProps> = ({
 
         {/* Right side content */}
         <div className="flex items-center gap-4">
-          {/* Add Task button */}
-          {showAddTaskButton && (
-            <button
-              onClick={onAddTaskClick}
-              className="bg-[#7B1984] text-white px-4 py-2 rounded-md font-medium text-sm"
-            >
-              ADD TASK
-            </button>
-          )}
-
-          {/* User profile */}
+          {/* User profile with dropdown */}
           {user && (
-            <div className="flex items-center gap-3">
+            <div className="relative" ref={dropdownRef}>
               <div
                 className="flex items-center gap-2 cursor-pointer"
-                onClick={() => navigate("/profile")}
+                onClick={() => setIsDropdownOpen(!isDropdownOpen)}
               >
                 {user.photoURL ? (
                   <img
@@ -62,17 +81,28 @@ const Header: React.FC<HeaderProps> = ({
                 <span className="text-sm font-medium">
                   {user.displayName || "Profile"}
                 </span>
+                <ChevronDownIcon className="w-6 h-6 text-gray-500" />
               </div>
 
-              {/* Logout link */}
-              <Link
-                to="/"
-                onClick={logout}
-                className="text-sm font-medium text-gray-600 flex items-center gap-1"
-              >
-                <LogoutIcon className="w-4 h-4" />
-                <span>Logout</span>
-              </Link>
+              {/* Dropdown menu */}
+              {isDropdownOpen && (
+                <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-10 py-1">
+                  <button
+                    onClick={handleProfileClick}
+                    className="w-full px-4 py-2 text-left text-sm hover:bg-gray-100 flex items-center gap-2"
+                  >
+                    <DragIcon className="w-5 h-5 mt-2" />
+                    <span>View Profile</span>
+                  </button>
+                  <button
+                    onClick={handleLogoutClick}
+                    className="w-full px-4 py-2 text-left text-sm hover:bg-gray-100 flex items-center gap-2"
+                  >
+                    <LogoutIcon className="w-5 h-5 mt-2" />
+                    <span>Logout</span>
+                  </button>
+                </div>
+              )}
             </div>
           )}
         </div>

@@ -13,12 +13,12 @@ const TaskViewToggle: React.FC<TaskViewToggleProps> = ({
   className = "",
 }) => {
   return (
-    <div className={`flex border-b ${className}`}>
+    <div className={`flex ${className}`}>
       <button
         onClick={() => onChange("list")}
         className={`flex items-center gap-2 px-4 py-2 font-medium text-sm relative ${
           view === "list"
-            ? "text-black border-b-2 border-black"
+            ? "text-black border-b-1 border-black"
             : "text-gray-500 hover:text-gray-700"
         }`}
       >
@@ -29,7 +29,7 @@ const TaskViewToggle: React.FC<TaskViewToggleProps> = ({
         onClick={() => onChange("board")}
         className={`flex items-center gap-2 px-4 py-2 font-medium text-sm relative ${
           view === "board"
-            ? "text-black border-b-2 border-black"
+            ? "text-black border-b-1 border-black"
             : "text-gray-500 hover:text-gray-700"
         }`}
       >

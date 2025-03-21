@@ -22,10 +22,8 @@ export interface TaskBoardColumnProps {
 }
 
 const TaskBoardColumn: React.FC<TaskBoardColumnProps> = ({
-  id,
   title,
   color,
-  status,
   tasks,
   onDragOver,
   onDrop,

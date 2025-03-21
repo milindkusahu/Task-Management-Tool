@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useTasks } from "../../hooks/useTasks";
 import { useCurrentUser } from "../../hooks/useCurrentUser";
 import { Task } from "../../types/task";
@@ -181,15 +181,28 @@ const Dashboard = () => {
     });
   };
 
-  const handleFilterChange = (newFilters: TaskFilterValues) => {
-    setFilters(newFilters);
-  };
+  // Use useCallback to memoize the filter change handler
+  const handleFilterChange = useCallback((newFilters: TaskFilterValues) => {
+    // Preserve the search text when other filters change
+    setFilters((prev) => ({
+      ...newFilters,
+      searchText: prev.searchText,
+    }));
+  }, []);
 
   const handleViewChange = (newView: "list" | "board") => {
     setView(newView);
   };
 
-  const transformTasks = (tasks: Task[]) => {
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFilters((prev) => ({
+      ...prev,
+      searchText: e.target.value,
+    }));
+  };
+
+  // Memoize these transformations to avoid unnecessary recalculations
+  const transformTasks = useCallback((tasks: Task[]) => {
     return tasks.map((task) => ({
       ...task,
       dueDate:
@@ -197,63 +210,69 @@ const Dashboard = () => {
           ? task.dueDate
           : formatDate(task.dueDate),
     }));
-  };
+  }, []);
 
-  const filterTasks = (tasks: Task[]) => {
-    return tasks.filter((task) => {
-      if (filters.category && task.category !== filters.category) {
-        return false;
-      }
-
-      if (filters.startDate || filters.endDate) {
-        const taskDate = task.dueDate ? new Date(task.dueDate) : null;
-
-        if (taskDate) {
-          // Set hours to 0 for date comparison only
-          taskDate.setHours(0, 0, 0, 0);
-
-          if (filters.startDate) {
-            const startDate = new Date(filters.startDate);
-            startDate.setHours(0, 0, 0, 0);
-            if (taskDate < startDate) return false;
-          }
-
-          if (filters.endDate) {
-            const endDate = new Date(filters.endDate);
-            endDate.setHours(0, 0, 0, 0);
-            if (taskDate > endDate) return false;
-          }
-        } else if (filters.startDate || filters.endDate) {
+  const filterTasks = useCallback(
+    (tasks: Task[]) => {
+      return tasks.filter((task) => {
+        if (filters.category && task.category !== filters.category) {
           return false;
         }
-      }
 
-      // Filter by tags
-      if (filters.tags.length > 0 && task.tags) {
-        const hasMatchingTag = filters.tags.some(
-          (tag) => task.tags && task.tags.includes(tag)
-        );
-        if (!hasMatchingTag) return false;
-      }
+        if (filters.startDate || filters.endDate) {
+          const taskDate = task.dueDate ? new Date(task.dueDate) : null;
 
-      // Filter by search text
-      if (
-        filters.searchText &&
-        !task.title.toLowerCase().includes(filters.searchText.toLowerCase()) &&
-        !(
-          task.description &&
-          task.description
+          if (taskDate) {
+            // Set hours to 0 for date comparison only
+            taskDate.setHours(0, 0, 0, 0);
+
+            if (filters.startDate) {
+              const startDate = new Date(filters.startDate);
+              startDate.setHours(0, 0, 0, 0);
+              if (taskDate < startDate) return false;
+            }
+
+            if (filters.endDate) {
+              const endDate = new Date(filters.endDate);
+              endDate.setHours(0, 0, 0, 0);
+              if (taskDate > endDate) return false;
+            }
+          } else if (filters.startDate || filters.endDate) {
+            return false;
+          }
+        }
+
+        // Filter by tags
+        if (filters.tags.length > 0 && task.tags) {
+          const hasMatchingTag = filters.tags.some(
+            (tag) => task.tags && task.tags.includes(tag)
+          );
+          if (!hasMatchingTag) return false;
+        }
+
+        // Filter by search text
+        if (
+          filters.searchText &&
+          !task.title
             .toLowerCase()
-            .includes(filters.searchText.toLowerCase())
-        )
-      ) {
-        return false;
-      }
+            .includes(filters.searchText.toLowerCase()) &&
+          !(
+            task.description &&
+            task.description
+              .toLowerCase()
+              .includes(filters.searchText.toLowerCase())
+          )
+        ) {
+          return false;
+        }
 
-      return true;
-    });
-  };
+        return true;
+      });
+    },
+    [filters]
+  );
 
+  // Calculate filtered and sorted tasks
   const filteredTodoTasks = filterTasks(transformTasks(todoTasks));
   const filteredInProgressTasks = filterTasks(transformTasks(inProgressTasks));
   const filteredCompletedTasks = filterTasks(transformTasks(completedTasks));
@@ -358,41 +377,78 @@ const Dashboard = () => {
   return (
     <div className="min-h-screen bg-white">
       {/* Header */}
-      <Header
-        showAddTaskButton={true}
-        onAddTaskClick={() => setIsTaskModalOpen(true)}
-      />
+      <Header />
 
       {/* Main content */}
       <div className="max-w-[1402px] mx-auto px-4 md:px-8 py-6">
-        {/* View toggle and filters */}
+        {/* View toggle - now placed at the top */}
         <div className="mb-6">
-          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-            <TaskViewToggle view={view} onChange={handleViewChange} />
+          <TaskViewToggle view={view} onChange={handleViewChange} />
+        </div>
+
+        {/* Task Management Bar */}
+        <div className="mb-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+          {/* Left side: Filters */}
+          <div className="w-full md:w-auto">
             <TaskFilters
               onFilterChange={handleFilterChange}
               initialValues={filters}
             />
           </div>
 
-          {/* Batch Actions */}
-          <BatchActions
-            selectedCount={selectedTaskIds.size}
-            onBatchDelete={handleBatchDelete}
-            onBatchComplete={handleBatchComplete}
-            onToggleMultiSelect={toggleMultiSelect}
-            isMultiSelectActive={isMultiSelectActive}
-            onSelectAll={() => {
-              const allTasks = [
-                ...sortedTodoTasks,
-                ...sortedInProgressTasks,
-                ...sortedCompletedTasks,
-              ];
-              selectAllTasks(allTasks);
-            }}
-            onClearSelection={clearTaskSelection}
-          />
+          {/* Right side: Search and Add Task */}
+          <div className="flex w-full md:w-auto items-center gap-2">
+            <div className="relative flex-grow">
+              <input
+                type="text"
+                value={filters.searchText}
+                onChange={handleSearchChange}
+                placeholder="Search tasks"
+                className="w-full px-8 py-1.5 rounded-full border border-gray-300 focus:outline-none focus:ring-1 focus:ring-purple-500 focus:border-purple-500"
+              />
+              <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-4 w-4"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                  />
+                </svg>
+              </div>
+            </div>
+            <button
+              onClick={handleAddTaskClick}
+              className="bg-[#7B1984] text-white px-4 py-2 rounded-full font-medium text-sm whitespace-nowrap"
+            >
+              ADD TASK
+            </button>
+          </div>
         </div>
+
+        {/* Batch Actions */}
+        <BatchActions
+          selectedCount={selectedTaskIds.size}
+          onBatchDelete={handleBatchDelete}
+          onBatchComplete={handleBatchComplete}
+          onToggleMultiSelect={toggleMultiSelect}
+          isMultiSelectActive={isMultiSelectActive}
+          onSelectAll={() => {
+            const allTasks = [
+              ...sortedTodoTasks,
+              ...sortedInProgressTasks,
+              ...sortedCompletedTasks,
+            ];
+            selectAllTasks(allTasks);
+          }}
+          onClearSelection={clearTaskSelection}
+        />
 
         {/* Table headers for list view */}
         {view === "list" &&
