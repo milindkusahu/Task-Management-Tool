@@ -47,7 +47,6 @@ const TaskForm: React.FC<TaskFormProps> = ({
       [name]: value,
     }));
 
-    // Clear error when field is edited
     if (errors[name as keyof typeof errors]) {
       setErrors((prev) => ({
         ...prev,

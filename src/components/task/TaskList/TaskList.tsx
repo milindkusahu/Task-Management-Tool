@@ -41,7 +41,6 @@ const TaskList: React.FC<TaskListProps> = ({
   const [isAddingTask, setIsAddingTask] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
 
-  // Status to use for new tasks in this list
   const getStatusFromTitle = (title: string): string => {
     if (title.includes("Todo")) return "TO-DO";
     if (title.includes("In-Progress")) return "IN-PROGRESS";

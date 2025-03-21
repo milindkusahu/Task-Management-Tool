@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Task } from "../../../types/task";
-import { MoreIcon, EditIcon, DeleteIcon } from "../../../utils/icons";
+import { MoreIcon, EditIcon, DeleteIcon, DragIcon } from "../../../utils/icons";
 
 export interface TaskCardProps {
   task: Task;
@@ -67,7 +67,6 @@ const TaskCard: React.FC<TaskCardProps> = ({
     }
   };
 
-  // Status badge component
   const StatusBadge = ({ status }: { status: string }) => {
     let bgColor = "bg-gray-100";
     let textColor = "text-gray-700";
@@ -89,7 +88,6 @@ const TaskCard: React.FC<TaskCardProps> = ({
     );
   };
 
-  // Category badge component
   const CategoryBadge = ({ category }: { category?: string }) => {
     const bgColor = category === "WORK" ? "bg-purple-100" : "bg-orange-100";
     const textColor =
@@ -132,15 +130,26 @@ const TaskCard: React.FC<TaskCardProps> = ({
                 onClick={(e) => e.stopPropagation()}
               />
             ) : (
-              <input
-                type="checkbox"
-                className="mt-1 h-4 w-4 rounded border-gray-300"
-                checked={task.status === "COMPLETED"}
-                onChange={handleStatusChange}
-                onClick={(e) => e.stopPropagation()}
-              />
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  className="mt-1 h-4 w-4 rounded border-gray-300"
+                  checked={task.status === "COMPLETED"}
+                  onChange={handleStatusChange}
+                  onClick={(e) => e.stopPropagation()}
+                />
+                {isDraggable && (
+                  <span className="cursor-move mt-1">
+                    <DragIcon className="w-4 h-4 text-gray-400" />
+                  </span>
+                )}
+              </div>
             )}
-            <span className="text-sm text-gray-800 font-medium">
+            <span
+              className={`text-sm text-gray-800 font-medium ${
+                task.status === "COMPLETED" ? "line-through text-gray-500" : ""
+              }`}
+            >
               {task.title}
             </span>
           </div>
@@ -176,7 +185,11 @@ const TaskCard: React.FC<TaskCardProps> = ({
         </div>
 
         {task.description && (
-          <p className="text-xs text-gray-600 mb-2 ml-6 line-clamp-2">
+          <p
+            className={`text-xs text-gray-600 mb-2 ml-6 line-clamp-2 ${
+              task.status === "COMPLETED" ? "line-through text-gray-500" : ""
+            }`}
+          >
             {task.description}
           </p>
         )}
@@ -192,7 +205,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
   // List variant
   return (
     <div
-      className={`bg-white border-b border-gray-200 px-4 py-3 grid grid-cols-4 gap-4 hover:bg-gray-50 cursor-pointer ${
+      className={`bg-white border-b border-gray-200 px-4 py-3 grid grid-cols-5 gap-4 hover:bg-gray-50 cursor-pointer ${
         isSelected ? "bg-purple-50" : ""
       }`}
       onClick={handleCardClick}
@@ -214,22 +227,37 @@ const TaskCard: React.FC<TaskCardProps> = ({
             onClick={(e) => e.stopPropagation()}
           />
         ) : (
-          <input
-            type="checkbox"
-            className="h-4 w-4 rounded border-gray-300"
-            checked={task.status === "COMPLETED"}
-            onChange={handleStatusChange}
-            onClick={(e) => e.stopPropagation()}
-          />
+          <div className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              className="h-4 w-4 rounded border-gray-300"
+              checked={task.status === "COMPLETED"}
+              onChange={handleStatusChange}
+              onClick={(e) => e.stopPropagation()}
+            />
+            {isDraggable && (
+              <span className="cursor-move">
+                <DragIcon className="w-4 h-4 text-gray-400" />
+              </span>
+            )}
+          </div>
         )}
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
-            <span className="text-sm text-gray-800 font-medium truncate">
+            <span
+              className={`text-sm text-gray-800 font-medium truncate ${
+                task.status === "COMPLETED" ? "line-through text-gray-500" : ""
+              }`}
+            >
               {task.title}
             </span>
           </div>
           {task.description && (
-            <p className="text-xs text-gray-500 mt-1 line-clamp-1">
+            <p
+              className={`text-xs text-gray-500 mt-1 line-clamp-1 ${
+                task.status === "COMPLETED" ? "line-through" : ""
+              }`}
+            >
               {task.description}
             </p>
           )}
@@ -247,8 +275,26 @@ const TaskCard: React.FC<TaskCardProps> = ({
       </div>
 
       {/* Task Category Column */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center">
         <CategoryBadge category={task.category} />
+      </div>
+
+      {/* Tags Column */}
+      <div className="flex items-center justify-between">
+        <div className="flex flex-wrap gap-1 mr-2 max-w-[150px]">
+          {task.tags && task.tags.length > 0 ? (
+            task.tags.map((tag, index) => (
+              <span
+                key={index}
+                className="px-2 py-0.5 bg-purple-100 text-purple-800 rounded-full text-xs"
+              >
+                {tag}
+              </span>
+            ))
+          ) : (
+            <span className="text-xs text-gray-400">No tags</span>
+          )}
+        </div>
 
         {/* Task Actions */}
         <div className="relative">

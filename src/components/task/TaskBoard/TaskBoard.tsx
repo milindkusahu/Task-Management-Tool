@@ -37,7 +37,6 @@ const TaskBoard: React.FC<TaskBoardProps> = ({
   selectedTaskIds = new Set(),
   onToggleTaskSelection,
 }) => {
-  // Handle column drop
   const handleColumnDrop = (e: React.DragEvent, status: string) => {
     if (onDrop) {
       onDrop(e, status);

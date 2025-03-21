@@ -16,7 +16,6 @@ const Home = () => {
 
   const handleGoogleSignIn = async () => {
     await signInWithGoogle();
-    // The redirection will happen in the useEffect when user state updates
   };
 
   return (

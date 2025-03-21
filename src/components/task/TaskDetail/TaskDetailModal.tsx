@@ -74,7 +74,7 @@ const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
       isOpen={isOpen}
       onClose={onClose}
       title={isEditing ? "Edit Task" : "Task Details"}
-      size="lg"
+      size="xl"
       footer={isEditing ? undefined : modalFooter}
     >
       {isEditing ? (
@@ -85,7 +85,7 @@ const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
           includeAttachments={true}
         />
       ) : (
-        <div className="flex md:flex-row flex-col h-full">
+        <div className="flex md:flex-row flex-col h-full max-h-[80vh]">
           {/* Main content area */}
           <div className="flex-1 overflow-auto p-4 md:p-6 flex flex-col">
             <h2 className="text-xl font-semibold mb-4">{task.title}</h2>

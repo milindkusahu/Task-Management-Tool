@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { ChevronDownIcon } from "../../../utils/icons";
 
 export interface TaskFiltersProps {
@@ -31,22 +31,45 @@ const TaskFilters: React.FC<TaskFiltersProps> = ({
   const [showTagsDropdown, setShowTagsDropdown] = useState(false);
   const [newTag, setNewTag] = useState("");
 
-  // Notify parent component when filters change
+  const categoryRef = useRef<HTMLDivElement>(null);
+  const dateRef = useRef<HTMLDivElement>(null);
+  const tagsRef = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
     onFilterChange(filters);
-    // Ensure we close dropdowns when clicking outside
+  }, [filters, onFilterChange]);
+
+  // Handle clicks outside dropdowns
+  useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (showCategoryDropdown || showDateDropdown) {
-        if (!(event.target as Element).closest(".filter-dropdown")) {
-          setShowCategoryDropdown(false);
-          setShowDateDropdown(false);
-        }
+      if (
+        categoryRef.current &&
+        !categoryRef.current.contains(event.target as Node) &&
+        showCategoryDropdown
+      ) {
+        setShowCategoryDropdown(false);
+      }
+
+      if (
+        dateRef.current &&
+        !dateRef.current.contains(event.target as Node) &&
+        showDateDropdown
+      ) {
+        setShowDateDropdown(false);
+      }
+
+      if (
+        tagsRef.current &&
+        !tagsRef.current.contains(event.target as Node) &&
+        showTagsDropdown
+      ) {
+        setShowTagsDropdown(false);
       }
     };
 
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [filters, onFilterChange, showCategoryDropdown, showDateDropdown]);
+  }, [showCategoryDropdown, showDateDropdown, showTagsDropdown]);
 
   const handleCategorySelect = (category: string) => {
     setFilters((prev) => ({
@@ -110,7 +133,7 @@ const TaskFilters: React.FC<TaskFiltersProps> = ({
         <span className="text-gray-600 whitespace-nowrap">Filter by:</span>
         <div className="flex gap-2.5">
           {/* Category filter */}
-          <div className="relative filter-dropdown">
+          <div className="relative filter-dropdown" ref={categoryRef}>
             <button
               onClick={() => {
                 setShowCategoryDropdown(!showCategoryDropdown);
@@ -154,7 +177,7 @@ const TaskFilters: React.FC<TaskFiltersProps> = ({
           </div>
 
           {/* Due date filter */}
-          <div className="relative filter-dropdown">
+          <div className="relative filter-dropdown" ref={dateRef}>
             <button
               onClick={() => {
                 setShowDateDropdown(!showDateDropdown);
@@ -214,7 +237,7 @@ const TaskFilters: React.FC<TaskFiltersProps> = ({
           </div>
 
           {/* Tags filter */}
-          <div className="relative filter-dropdown">
+          <div className="relative filter-dropdown" ref={tagsRef}>
             <button
               onClick={() => {
                 setShowTagsDropdown(!showTagsDropdown);

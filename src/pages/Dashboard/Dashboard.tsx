@@ -55,7 +55,6 @@ const Dashboard = () => {
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [isTaskDetailModalOpen, setIsTaskDetailModalOpen] = useState(false);
 
-  // Use user preferences for default view if available
   useEffect(() => {
     if (userProfile?.preferences?.defaultView) {
       setView(userProfile.preferences.defaultView as "list" | "board");
@@ -169,13 +168,11 @@ const Dashboard = () => {
   const handleSort = (key: keyof Task) => {
     setSortConfig((prevConfig) => {
       if (prevConfig.key === key) {
-        // Toggle direction if same key is clicked
         return {
           key,
           direction: prevConfig.direction === "asc" ? "desc" : "asc",
         };
       } else {
-        // Default to ascending for new key
         return {
           key,
           direction: "asc",
@@ -192,7 +189,6 @@ const Dashboard = () => {
     setView(newView);
   };
 
-  // Transform tasks for UI display
   const transformTasks = (tasks: Task[]) => {
     return tasks.map((task) => ({
       ...task,
@@ -203,15 +199,12 @@ const Dashboard = () => {
     }));
   };
 
-  // Filter function
   const filterTasks = (tasks: Task[]) => {
     return tasks.filter((task) => {
-      // Filter by category
       if (filters.category && task.category !== filters.category) {
         return false;
       }
 
-      // Filter by date range
       if (filters.startDate || filters.endDate) {
         const taskDate = task.dueDate ? new Date(task.dueDate) : null;
 
@@ -231,14 +224,12 @@ const Dashboard = () => {
             if (taskDate > endDate) return false;
           }
         } else if (filters.startDate || filters.endDate) {
-          // If task has no date but date filter is active, exclude it
           return false;
         }
       }
 
-      // Filter by tags (if implemented in Task type)
+      // Filter by tags
       if (filters.tags.length > 0 && task.tags) {
-        // Check if task has at least one of the filtered tags
         const hasMatchingTag = filters.tags.some(
           (tag) => task.tags && task.tags.includes(tag)
         );
@@ -263,12 +254,10 @@ const Dashboard = () => {
     });
   };
 
-  // Prepare task data for UI
   const filteredTodoTasks = filterTasks(transformTasks(todoTasks));
   const filteredInProgressTasks = filterTasks(transformTasks(inProgressTasks));
   const filteredCompletedTasks = filterTasks(transformTasks(completedTasks));
 
-  // Apply sorting if sort key is set
   const sortedTodoTasks = sortConfig.key
     ? sortTasks(filteredTodoTasks, sortConfig)
     : filteredTodoTasks;
@@ -279,7 +268,6 @@ const Dashboard = () => {
     ? sortTasks(filteredCompletedTasks, sortConfig)
     : filteredCompletedTasks;
 
-  // Prepare task sections for list view
   const taskSections = [
     {
       id: "todo",
@@ -301,7 +289,6 @@ const Dashboard = () => {
     },
   ];
 
-  // Prepare columns for board view
   const boardColumns: TaskColumn[] = [
     {
       id: "todo",
@@ -326,7 +313,6 @@ const Dashboard = () => {
     },
   ];
 
-  // Drag and drop handlers
   const handleDragStart = (e: React.DragEvent, task: Task) => {
     setDraggedTask({ id: String(task.id), status: task.status });
     e.dataTransfer.setData(
@@ -347,10 +333,8 @@ const Dashboard = () => {
 
     const { id, status } = draggedTask;
 
-    // If dropped in the same section, do nothing
     if (status === targetStatus) return;
 
-    // Update the task status
     updateTask({
       taskId: id,
       updates: { status: targetStatus },
@@ -363,7 +347,7 @@ const Dashboard = () => {
     try {
       await createTask({
         taskData,
-        attachmentFiles: [], // Add file handling if needed
+        attachmentFiles: [],
       });
       setIsTaskModalOpen(false);
     } catch (error) {
@@ -417,7 +401,7 @@ const Dashboard = () => {
             sortedInProgressTasks.length +
             sortedCompletedTasks.length >
             0 && (
-            <div className="hidden md:grid grid-cols-4 gap-4 px-4 py-2 text-sm font-medium text-gray-600 mb-2">
+            <div className="hidden md:grid grid-cols-5 gap-4 px-4 py-2 text-sm font-medium text-gray-600 mb-2">
               <div>Task name</div>
               <div className="flex items-center gap-1">
                 Due on
@@ -446,6 +430,16 @@ const Dashboard = () => {
                     sortConfig.key === "category" ? sortConfig.direction : null
                   }
                   onClick={() => handleSort("category")}
+                  className="ml-1"
+                />
+              </div>
+              <div className="flex items-center gap-1">
+                Tags
+                <SortIndicator
+                  direction={
+                    sortConfig.key === "tags" ? sortConfig.direction : null
+                  }
+                  onClick={() => handleSort("tags")}
                   className="ml-1"
                 />
               </div>
