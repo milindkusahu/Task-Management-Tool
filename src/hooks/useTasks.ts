@@ -5,8 +5,8 @@ import {
   createTask,
   updateTask,
   deleteTask,
-  Task,
 } from "../services/taskService";
+import { Task } from "../types/task";
 
 export function useTasks() {
   const { user } = useAuthContext();

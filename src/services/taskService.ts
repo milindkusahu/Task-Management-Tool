@@ -7,10 +7,8 @@ import {
   doc,
   query,
   where,
-  orderBy,
   serverTimestamp,
   getDoc,
-  Timestamp,
 } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { db, storage, auth } from "../firebase/config";
@@ -137,3 +135,5 @@ export async function deleteTask(taskId: string): Promise<void> {
     throw error;
   }
 }
+
+export type { Task };

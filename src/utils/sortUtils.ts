@@ -13,6 +13,11 @@ export const sortTasks = (tasks: Task[], sortConfig: SortConfig): Task[] => {
   }
 
   return [...tasks].sort((a, b) => {
+    // Use type guard to ensure key is valid before accessing
+    if (sortConfig.key === "") {
+      return 0;
+    }
+
     const aValue = a[sortConfig.key];
     const bValue = b[sortConfig.key];
 
@@ -64,10 +69,14 @@ export const sortTasks = (tasks: Task[], sortConfig: SortConfig): Task[] => {
       }
     }
 
-    if (aValue < bValue) {
+    // Handle nullish values
+    const aSafe = aValue ?? "";
+    const bSafe = bValue ?? "";
+
+    if (aSafe < bSafe) {
       return sortConfig.direction === "asc" ? -1 : 1;
     }
-    if (aValue > bValue) {
+    if (aSafe > bSafe) {
       return sortConfig.direction === "asc" ? 1 : -1;
     }
     return 0;

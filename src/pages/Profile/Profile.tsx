@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useUserProfile } from "../../hooks/useUserProfile";
 import { useAuthContext } from "../../hooks/useAuthContext";
@@ -34,7 +34,7 @@ const Profile = () => {
   });
 
   // Reset form data when profile changes
-  useState(() => {
+  useEffect(() => {
     if (profile) {
       setFormData({
         displayName: profile.displayName || "",

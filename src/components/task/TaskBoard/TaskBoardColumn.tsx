@@ -92,7 +92,9 @@ const TaskBoardColumn: React.FC<TaskBoardColumnProps> = ({
             task={task}
             variant="board"
             onStatusChange={handleStatusChange}
-            onDelete={onTaskDelete}
+            onDelete={(taskId: string | number) =>
+              onTaskDelete && onTaskDelete(String(taskId))
+            }
             onClick={onTaskClick}
             onDragStart={onDragStart}
             isMultiSelectActive={isMultiSelectActive}

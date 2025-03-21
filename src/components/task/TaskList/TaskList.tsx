@@ -38,33 +38,6 @@ const TaskList: React.FC<TaskListProps> = ({
   onToggleTaskSelection,
 }) => {
   const [isOpen, setIsOpen] = useState(defaultOpen);
-  const [isAddingTask, setIsAddingTask] = useState(false);
-  const [editingTask, setEditingTask] = useState<Task | null>(null);
-
-  const getStatusFromTitle = (title: string): string => {
-    if (title.includes("Todo")) return "TO-DO";
-    if (title.includes("In-Progress")) return "IN-PROGRESS";
-    if (title.includes("Completed")) return "COMPLETED";
-    return "TO-DO";
-  };
-
-  const handleTaskCreate = (taskData: Omit<Task, "id" | "userId">) => {
-    if (onTaskCreate) {
-      onTaskCreate(taskData);
-    }
-    setIsAddingTask(false);
-  };
-
-  const handleTaskUpdate = (taskData: Omit<Task, "id" | "userId">) => {
-    if (onTaskUpdate && editingTask?.id) {
-      onTaskUpdate({
-        taskId: String(editingTask.id),
-        updates: taskData,
-      });
-    }
-    setEditingTask(null);
-    setIsAddingTask(false);
-  };
 
   const handleTaskStatusChange = (
     taskId: string | number,
@@ -79,13 +52,9 @@ const TaskList: React.FC<TaskListProps> = ({
   };
 
   const handleEdit = (task: Task) => {
-    setEditingTask(task);
-    setIsAddingTask(true);
-  };
-
-  const handleCancel = () => {
-    setIsAddingTask(false);
-    setEditingTask(null);
+    if (onTaskClick) {
+      onTaskClick(task);
+    }
   };
 
   // Extract count from title if it has a format like "Todo (3)"
@@ -145,7 +114,9 @@ const TaskList: React.FC<TaskListProps> = ({
                 variant="list"
                 onStatusChange={handleTaskStatusChange}
                 onEdit={handleEdit}
-                onDelete={onTaskDelete}
+                onDelete={(taskId: string | number) =>
+                  onTaskDelete && onTaskDelete(String(taskId))
+                }
                 onClick={onTaskClick}
                 onDragStart={onDragStart}
                 isMultiSelectActive={isMultiSelectActive}

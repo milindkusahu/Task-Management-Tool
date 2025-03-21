@@ -6,7 +6,7 @@ export interface PageLayoutProps {
   children: React.ReactNode;
   title?: string;
   showHeader?: boolean;
-  headerProps?: React.ComponentProps<typeof Header>;
+  headerProps?: any;
   containerProps?: React.ComponentProps<typeof Container>;
   className?: string;
 }
