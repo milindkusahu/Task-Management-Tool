@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Task } from "../../../types/task";
 import { MoreIcon, EditIcon, DeleteIcon, DragIcon } from "../../../utils/icons";
 import toast from "react-hot-toast";
@@ -31,6 +31,24 @@ const TaskCard: React.FC<TaskCardProps> = ({
   onToggleSelect,
 }) => {
   const [showMenu, setShowMenu] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  // Close menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setShowMenu(false);
+      }
+    };
+
+    if (showMenu) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [showMenu]);
 
   const handleStatusChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     e.stopPropagation();
@@ -174,7 +192,10 @@ const TaskCard: React.FC<TaskCardProps> = ({
             </button>
 
             {showMenu && (
-              <div className="absolute right-0 mt-1 w-36 bg-white rounded-md shadow-lg z-10">
+              <div
+                className="absolute right-0 mt-1 w-36 bg-white rounded-md shadow-lg z-10"
+                ref={menuRef}
+              >
                 <div className="py-1">
                   <button
                     className="w-full px-4 py-2 text-left text-sm hover:bg-gray-100 flex items-center gap-2"
@@ -318,7 +339,10 @@ const TaskCard: React.FC<TaskCardProps> = ({
           </button>
 
           {showMenu && (
-            <div className="absolute right-0 mt-1 w-36 bg-white rounded-md shadow-lg z-10">
+            <div
+              className="absolute right-0 mt-1 w-36 bg-white rounded-md shadow-lg z-10"
+              ref={menuRef}
+            >
               <div className="py-1">
                 <button
                   className="w-full px-4 py-2 text-left text-sm hover:bg-gray-100 flex items-center gap-2"
