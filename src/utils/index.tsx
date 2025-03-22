@@ -18,6 +18,7 @@ import {
   CrossIcon,
   BatchIcon,
   SortIcon,
+  UserIcon,
 } from "./icons";
 
 const Icons = {
@@ -40,6 +41,7 @@ const Icons = {
   Cross: CrossIcon,
   Batch: BatchIcon,
   Sort: SortIcon,
+  User: UserIcon,
 };
 
 export default Icons;

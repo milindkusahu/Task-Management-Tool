@@ -4,7 +4,7 @@ import { useAuthContext } from "../../../hooks/useAuthContext";
 import {
   MobileDocumentIcon,
   LogoutIcon,
-  DragIcon,
+  UserIcon,
   ChevronDownIcon,
 } from "../../../utils/icons";
 
@@ -91,14 +91,14 @@ const Header: React.FC<HeaderProps> = () => {
                     onClick={handleProfileClick}
                     className="w-full px-4 py-2 text-left text-sm hover:bg-gray-100 flex items-center gap-2"
                   >
-                    <DragIcon className="w-5 h-5 mt-2" />
+                    <UserIcon className="w-5 h-5 mt-2" />
                     <span>View Profile</span>
                   </button>
                   <button
                     onClick={handleLogoutClick}
                     className="w-full px-4 py-2 text-left text-sm hover:bg-gray-100 flex items-center gap-2"
                   >
-                    <LogoutIcon className="w-5 h-5 mt-2" />
+                    <LogoutIcon className="w-6 h-6 mt-3" />
                     <span>Logout</span>
                   </button>
                 </div>
