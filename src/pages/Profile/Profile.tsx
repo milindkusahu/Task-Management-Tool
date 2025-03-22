@@ -12,6 +12,7 @@ import {
   Checkbox,
   Spinner,
 } from "../../components";
+import toast from "react-hot-toast";
 
 const Profile = () => {
   const { user } = useAuthContext();
@@ -76,8 +77,10 @@ const Profile = () => {
       });
 
       setIsEditing(false);
+      toast.success("Profile updated successfully!");
     } catch (error) {
       console.error("Error updating profile:", error);
+      toast.error("Failed to update profile. Please try again.");
     }
   };
 

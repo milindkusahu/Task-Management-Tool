@@ -19,6 +19,7 @@ import {
 import { TaskFilterValues } from "../../components/task/TaskFilters";
 import { TaskColumn } from "../../components/task/TaskBoard";
 import { updateTaskWithAttachments } from "../../services/taskService";
+import toast from "react-hot-toast";
 
 const Dashboard = () => {
   const { data: userProfile } = useCurrentUser();
@@ -90,11 +91,14 @@ const Dashboard = () => {
         await updateTask({ taskId, updates });
       }
 
+      toast.success("Task updated successfully!");
+
       if (isTaskDetailModalOpen) {
         setIsTaskDetailModalOpen(false);
       }
     } catch (error) {
       console.error("Error updating task:", error);
+      toast.error("Failed to update task. Please try again.");
     }
   };
 
@@ -134,6 +138,8 @@ const Dashboard = () => {
     );
     if (!confirmation) return;
 
+    toast.loading("Deleting tasks...", { id: "delete-tasks" });
+
     try {
       // Process deletions one by one
       const promises = Array.from(selectedTaskIds).map((id) => deleteTask(id));
@@ -141,9 +147,14 @@ const Dashboard = () => {
 
       // Clear selection after successful deletion
       clearTaskSelection();
+      toast.success(`Successfully deleted ${selectedTaskIds.size} tasks`, {
+        id: "delete-tasks",
+      });
     } catch (error) {
       console.error("Error performing batch delete:", error);
-      alert("Some tasks could not be deleted. Please try again.");
+      toast.error("Some tasks could not be deleted. Please try again.", {
+        id: "delete-tasks",
+      });
     }
   };
 
@@ -383,8 +394,10 @@ const Dashboard = () => {
         attachmentFiles: attachmentFiles,
       });
       setIsTaskModalOpen(false);
+      toast.success("Task created successfully!");
     } catch (error) {
       console.error("Error creating task:", error);
+      toast.error("Failed to create task. Please try again.");
     }
   };
 

@@ -8,6 +8,7 @@ import {
 } from "firebase/auth";
 import { auth } from "../firebase/config";
 import { AuthContextType } from "../types/auth";
+import toast from "react-hot-toast";
 
 export function useAuth(): AuthContextType {
   const [user, setUser] = useState<User | null>(null);
@@ -41,11 +42,13 @@ export function useAuth(): AuthContextType {
 
     try {
       const provider = new GoogleAuthProvider();
-      await signInWithPopup(auth, provider);
+      const result = await signInWithPopup(auth, provider);
+      toast.success(`Welcome, ${result.user.displayName || "User"}!`);
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : "Unknown error occurred";
       setError(errorMessage);
+      toast.error("Failed to sign in with Google. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -55,10 +58,12 @@ export function useAuth(): AuthContextType {
     setLoading(true);
     try {
       await signOut(auth);
+      toast.success("Logged out successfully!");
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : "Unknown error occurred";
       setError(errorMessage);
+      toast.error("Failed to log out. Please try again.");
     } finally {
       setLoading(false);
     }
