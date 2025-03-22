@@ -65,22 +65,52 @@ const Profile = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    toast.loading("Updating profile...", { id: "profile-update" });
+
     try {
+      // Create promises array for all updates
+      const updatePromises = [];
+
+      // Only update display name if it has changed
       if (formData.displayName !== profile?.displayName) {
-        updateProfile({ displayName: formData.displayName });
+        const profilePromise = new Promise((resolve, reject) => {
+          updateProfile(
+            { displayName: formData.displayName },
+            {
+              onSuccess: () => resolve(true),
+              onError: (error) => reject(error),
+            }
+          );
+        });
+        updatePromises.push(profilePromise);
       }
 
-      updatePreferences({
-        theme: formData.theme as "light" | "dark",
-        defaultView: formData.defaultView as "list" | "board",
-        emailNotifications: formData.emailNotifications,
+      // Update preferences
+      const preferencesPromise = new Promise((resolve, reject) => {
+        updatePreferences(
+          {
+            theme: formData.theme as "light" | "dark",
+            defaultView: formData.defaultView as "list" | "board",
+            emailNotifications: formData.emailNotifications,
+          },
+          {
+            onSuccess: () => resolve(true),
+            onError: (error) => reject(error),
+          }
+        );
       });
+      updatePromises.push(preferencesPromise);
+
+      // Wait for all updates to complete
+      await Promise.all(updatePromises);
 
       setIsEditing(false);
-      toast.success("Profile updated successfully!");
+      toast.success("Profile updated successfully!", { id: "profile-update" });
     } catch (error) {
       console.error("Error updating profile:", error);
-      toast.error("Failed to update profile. Please try again.");
+      toast.error("Failed to update profile. Please try again.", {
+        id: "profile-update",
+      });
     }
   };
 

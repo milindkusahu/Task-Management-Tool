@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Task } from "../../../types/task";
 import { MoreIcon, EditIcon, DeleteIcon, DragIcon } from "../../../utils/icons";
+import toast from "react-hot-toast";
 
 export interface TaskCardProps {
   task: Task;
@@ -49,7 +50,18 @@ const TaskCard: React.FC<TaskCardProps> = ({
   const handleDelete = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (onDelete && task.id) {
-      onDelete(task.id);
+      const confirmDelete = window.confirm(
+        "Are you sure you want to delete this task?"
+      );
+      if (confirmDelete) {
+        try {
+          onDelete(task.id);
+          toast.success("Task deleted successfully!");
+        } catch (error) {
+          console.error("Error deleting task:", error);
+          toast.error("Failed to delete task. Please try again.");
+        }
+      }
     }
     setShowMenu(false);
   };

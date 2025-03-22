@@ -1,6 +1,8 @@
 import React, { useState, useRef, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuthContext } from "../../../hooks/useAuthContext";
+import { useUserProfile } from "../../../hooks/useUserProfile";
+import toast from "react-hot-toast";
 import {
   MobileDocumentIcon,
   LogoutIcon,
@@ -15,6 +17,7 @@ export interface HeaderProps {
 
 const Header: React.FC<HeaderProps> = () => {
   const { user, logout } = useAuthContext();
+  const { profile } = useUserProfile();
   const navigate = useNavigate();
 
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -40,10 +43,21 @@ const Header: React.FC<HeaderProps> = () => {
     setIsDropdownOpen(false);
   };
 
-  const handleLogoutClick = () => {
-    logout();
-    setIsDropdownOpen(false);
+  const handleLogoutClick = async () => {
+    try {
+      await logout();
+      toast.success("Logged out successfully!");
+      setIsDropdownOpen(false);
+    } catch (error) {
+      console.error("Error logging out:", error);
+      toast.error("Failed to log out. Please try again.");
+    }
   };
+
+  // Use the profile displayName if available, fall back to user.displayName
+  const displayName = profile?.displayName || user?.displayName || "Profile";
+  // Use the profile photoURL if available, fall back to user.photoURL
+  const photoURL = profile?.photoURL || user?.photoURL;
 
   return (
     <header className="border-b border-gray-200 bg-white py-4 px-4">
@@ -63,24 +77,20 @@ const Header: React.FC<HeaderProps> = () => {
                 className="flex items-center gap-2 cursor-pointer"
                 onClick={() => setIsDropdownOpen(!isDropdownOpen)}
               >
-                {user.photoURL ? (
+                {photoURL ? (
                   <img
-                    src={user.photoURL}
+                    src={photoURL}
                     alt="Profile"
                     className="h-8 w-8 rounded-full"
                   />
                 ) : (
                   <div className="h-8 w-8 rounded-full bg-gray-300 flex items-center justify-center">
                     <span className="text-sm font-medium text-gray-600">
-                      {user.displayName?.charAt(0) ||
-                        user.email?.charAt(0) ||
-                        "?"}
+                      {displayName.charAt(0) || user.email?.charAt(0) || "?"}
                     </span>
                   </div>
                 )}
-                <span className="text-sm font-medium">
-                  {user.displayName || "Profile"}
-                </span>
+                <span className="text-sm font-medium">{displayName}</span>
                 <ChevronDownIcon className="w-6 h-6 text-gray-500" />
               </div>
 
