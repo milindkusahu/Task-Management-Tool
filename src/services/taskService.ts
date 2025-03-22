@@ -12,7 +12,7 @@ import {
 } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { db, storage, auth } from "../firebase/config";
-import { Task } from "../types/task";
+import { Task, ActivityLogItem } from "../types/task";
 
 export async function createTask(
   taskData: Omit<Task, "id">,
@@ -20,6 +20,7 @@ export async function createTask(
 ): Promise<string> {
   try {
     const attachments = taskData.attachments || [];
+    const currentUser = auth.currentUser;
 
     if (attachmentFiles && attachmentFiles.length > 0) {
       for (const file of attachmentFiles) {
@@ -33,9 +34,17 @@ export async function createTask(
       }
     }
 
+    // Create initial activity log
+    const initialActivity: ActivityLogItem = {
+      action: "created this task",
+      timestamp: new Date(),
+      userId: currentUser?.uid,
+    };
+
     const taskRef = await addDoc(collection(db, "tasks"), {
       ...taskData,
       attachments,
+      activityLog: [initialActivity],
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
     });
@@ -101,7 +110,7 @@ export async function updateTaskWithAttachments(
   attachmentFiles: File[]
 ): Promise<void> {
   try {
-    // First get the existing task to get any current attachments
+    // First get the existing task to get any current attachments and activity log
     const taskRef = doc(db, "tasks", taskId);
     const taskDoc = await getDoc(taskRef);
 
@@ -109,7 +118,8 @@ export async function updateTaskWithAttachments(
       throw new Error("Task not found");
     }
 
-    const taskData = taskDoc.data();
+    const taskData = taskDoc.data() as Task;
+    const currentUser = auth.currentUser;
 
     // Start with existing attachments if they're in the updates,
     // or from the current task if not
@@ -126,10 +136,82 @@ export async function updateTaskWithAttachments(
       attachments.push({ name: file.name, url });
     }
 
-    // Update the task with all attachments
+    // Create activity logs
+    const newActivities: ActivityLogItem[] = [];
+    const timestamp = new Date();
+
+    // Check each update field and create activity logs (same as in updateTask)
+    if (updates.status && updates.status !== taskData.status) {
+      newActivities.push({
+        action: `changed status`,
+        timestamp,
+        previousValue: taskData.status,
+        newValue: updates.status,
+        field: "status",
+        userId: currentUser?.uid,
+      });
+    }
+
+    if (updates.title && updates.title !== taskData.title) {
+      newActivities.push({
+        action: `updated title`,
+        timestamp,
+        previousValue: taskData.title,
+        newValue: updates.title,
+        field: "title",
+        userId: currentUser?.uid,
+      });
+    }
+
+    if (updates.description && updates.description !== taskData.description) {
+      newActivities.push({
+        action: `updated description`,
+        timestamp,
+        field: "description",
+        userId: currentUser?.uid,
+      });
+    }
+
+    if (updates.dueDate && updates.dueDate !== taskData.dueDate) {
+      newActivities.push({
+        action: `changed due date`,
+        timestamp,
+        previousValue: taskData.dueDate,
+        newValue: updates.dueDate,
+        field: "dueDate",
+        userId: currentUser?.uid,
+      });
+    }
+
+    if (updates.category && updates.category !== taskData.category) {
+      newActivities.push({
+        action: `changed category`,
+        timestamp,
+        previousValue: taskData.category,
+        newValue: updates.category,
+        field: "category",
+        userId: currentUser?.uid,
+      });
+    }
+
+    // Add activity for new attachments
+    if (attachmentFiles.length > 0) {
+      newActivities.push({
+        action: `added ${attachmentFiles.length} attachment${
+          attachmentFiles.length > 1 ? "s" : ""
+        }`,
+        timestamp,
+        field: "attachments",
+        userId: currentUser?.uid,
+      });
+    }
+
+    // Update the task with all attachments and activity logs
+    const existingActivities = taskData.activityLog || [];
     await updateDoc(taskRef, {
       ...updates,
       attachments,
+      activityLog: [...existingActivities, ...newActivities],
       updatedAt: serverTimestamp(),
     });
   } catch (error) {
@@ -144,10 +226,99 @@ export async function updateTask(
 ): Promise<void> {
   try {
     const taskRef = doc(db, "tasks", taskId);
-    await updateDoc(taskRef, {
+
+    // First, get the current task data
+    const taskDoc = await getDoc(taskRef);
+    if (!taskDoc.exists()) {
+      throw new Error("Task not found");
+    }
+
+    const taskData = taskDoc.data() as Task;
+    const currentUser = auth.currentUser;
+
+    // Create new activity log entries based on what changed
+    const newActivities: ActivityLogItem[] = [];
+    const timestamp = new Date();
+
+    // Check each update field and create activity logs
+    if (updates.status && updates.status !== taskData.status) {
+      newActivities.push({
+        action: `changed status`,
+        timestamp,
+        previousValue: taskData.status,
+        newValue: updates.status,
+        field: "status",
+        userId: currentUser?.uid,
+      });
+    }
+
+    if (updates.title && updates.title !== taskData.title) {
+      newActivities.push({
+        action: `updated title`,
+        timestamp,
+        previousValue: taskData.title,
+        newValue: updates.title,
+        field: "title",
+        userId: currentUser?.uid,
+      });
+    }
+
+    if (updates.description && updates.description !== taskData.description) {
+      newActivities.push({
+        action: `updated description`,
+        timestamp,
+        field: "description",
+        userId: currentUser?.uid,
+      });
+    }
+
+    if (updates.dueDate && updates.dueDate !== taskData.dueDate) {
+      newActivities.push({
+        action: `changed due date`,
+        timestamp,
+        previousValue: taskData.dueDate,
+        newValue: updates.dueDate,
+        field: "dueDate",
+        userId: currentUser?.uid,
+      });
+    }
+
+    if (updates.category && updates.category !== taskData.category) {
+      newActivities.push({
+        action: `changed category`,
+        timestamp,
+        previousValue: taskData.category,
+        newValue: updates.category,
+        field: "category",
+        userId: currentUser?.uid,
+      });
+    }
+
+    // Handle changes to attachments by detecting added or removed items
+    if (updates.attachments) {
+      // We'll just log that attachments were updated for simplicity
+      if (
+        !taskData.attachments ||
+        taskData.attachments.length !== updates.attachments.length
+      ) {
+        newActivities.push({
+          action: `updated attachments`,
+          timestamp,
+          field: "attachments",
+          userId: currentUser?.uid,
+        });
+      }
+    }
+
+    // Update the task with new activities added to existing ones
+    const existingActivities = taskData.activityLog || [];
+    const updatedData = {
       ...updates,
+      activityLog: [...existingActivities, ...newActivities],
       updatedAt: serverTimestamp(),
-    });
+    };
+
+    await updateDoc(taskRef, updatedData);
   } catch (error) {
     console.error("Error updating task:", error);
     throw error;
@@ -172,9 +343,6 @@ export async function deleteTask(taskId: string): Promise<void> {
       throw new Error("Permission denied: Task doesn't belong to current user");
     }
 
-    // Note: In a production app, you might want to also delete the attachment files
-    // from Firebase Storage when a task is deleted to avoid orphaned files
-
     await deleteDoc(taskRef);
   } catch (error) {
     console.error("Error deleting task:", error);
@@ -182,4 +350,4 @@ export async function deleteTask(taskId: string): Promise<void> {
   }
 }
 
-export type { Task };
+export type { Task, ActivityLogItem };

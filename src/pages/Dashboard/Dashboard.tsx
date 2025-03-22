@@ -587,20 +587,6 @@ const Dashboard = () => {
         onClose={() => setIsTaskDetailModalOpen(false)}
         onUpdate={handleTaskUpdate}
         task={selectedTask}
-        activityLog={[
-          {
-            action: "created this task",
-            timestamp: new Date().toISOString(),
-            previousValue: null,
-            newValue: null,
-          },
-          {
-            action: "changed status from to-do to in-progress",
-            timestamp: new Date().toISOString(),
-            previousValue: "TO-DO",
-            newValue: "IN-PROGRESS",
-          },
-        ]}
       />
     </div>
   );

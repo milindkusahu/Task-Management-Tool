@@ -15,6 +15,16 @@ export interface Task {
   }>;
   createdAt?: Date | FirestoreTimestamp;
   updatedAt?: Date | FirestoreTimestamp;
+  activityLog?: ActivityLogItem[];
+}
+
+export interface ActivityLogItem {
+  action: string;
+  timestamp: Date | FirestoreTimestamp;
+  previousValue?: string | null;
+  newValue?: string | null;
+  field?: string;
+  userId?: string;
 }
 
 export interface CreateTaskFormData {

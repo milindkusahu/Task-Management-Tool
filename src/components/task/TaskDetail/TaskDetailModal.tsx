@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { Modal, Button, Badge, Divider } from "../../common";
-import { Task } from "../../../types/task";
+import {
+  Task,
+  ActivityLogItem as TaskActivityLogItem,
+} from "../../../types/task";
 import { DateIcon } from "../../../utils/icons";
 import { formatDate } from "../../../utils/dateUtils";
 import { TaskForm } from "../TaskForm";
@@ -87,12 +90,24 @@ const ImageWithFallback: React.FC<ImageWithFallbackProps> = ({
   );
 };
 
+// Updated formatActivity function to display activity nicely
+const formatActivity = (activity: TaskActivityLogItem) => {
+  if (
+    activity.field === "status" &&
+    activity.previousValue &&
+    activity.newValue
+  ) {
+    return `changed status from ${activity.previousValue} to ${activity.newValue}`;
+  }
+
+  return activity.action;
+};
+
 const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
   isOpen,
   onClose,
   onUpdate,
   task,
-  activityLog = [],
 }) => {
   const [isEditing, setIsEditing] = useState(false);
 
@@ -283,27 +298,51 @@ const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
           <div className="w-full md:w-72 border-t md:border-l md:border-t-0 border-gray-200 bg-gray-50 p-4 overflow-auto">
             <h3 className="font-medium text-gray-700 mb-4">Activity</h3>
 
-            {activityLog.length > 0 ? (
+            {task.activityLog && task.activityLog.length > 0 ? (
               <div className="space-y-4">
-                {activityLog.map((activity, index) => (
-                  <div key={index} className="text-sm">
-                    <div className="flex justify-between text-gray-500 mb-1">
-                      <span>You {activity.action}</span>
-                      <span>{formatDate(activity.timestamp)}</span>
-                    </div>
-                    {activity.previousValue && activity.newValue && (
-                      <div className="mt-1 text-xs">
-                        <span className="bg-red-100 px-1 py-0.5 rounded">
-                          {activity.previousValue}
-                        </span>
-                        {" → "}
-                        <span className="bg-green-100 px-1 py-0.5 rounded">
-                          {activity.newValue}
-                        </span>
+                {/* Sort activities by timestamp, newest first */}
+                {[...task.activityLog]
+                  .sort((a, b) => {
+                    // Handle different timestamp types
+                    const timeA =
+                      a.timestamp instanceof Date
+                        ? a.timestamp.getTime()
+                        : a.timestamp?.seconds * 1000 || 0;
+                    const timeB =
+                      b.timestamp instanceof Date
+                        ? b.timestamp.getTime()
+                        : b.timestamp?.seconds * 1000 || 0;
+                    return timeB - timeA;
+                  })
+                  .map((activity, index) => {
+                    // Convert the timestamp
+                    const timestamp =
+                      activity.timestamp instanceof Date
+                        ? activity.timestamp
+                        : activity.timestamp?.seconds
+                        ? new Date(activity.timestamp.seconds * 1000)
+                        : new Date();
+
+                    return (
+                      <div key={index} className="text-sm">
+                        <div className="flex justify-between text-gray-500 mb-1">
+                          <span>You {formatActivity(activity)}</span>
+                          <span>{formatDate(timestamp.toISOString())}</span>
+                        </div>
+                        {activity.previousValue && activity.newValue && (
+                          <div className="mt-1 text-xs">
+                            <span className="bg-red-100 px-1 py-0.5 rounded">
+                              {activity.previousValue}
+                            </span>
+                            {" → "}
+                            <span className="bg-green-100 px-1 py-0.5 rounded">
+                              {activity.newValue}
+                            </span>
+                          </div>
+                        )}
                       </div>
-                    )}
-                  </div>
-                ))}
+                    );
+                  })}
               </div>
             ) : (
               <p className="text-sm text-gray-500">No activity recorded yet.</p>
