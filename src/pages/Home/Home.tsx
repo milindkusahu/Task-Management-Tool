@@ -68,7 +68,7 @@ const Home = () => {
               disabled={loading}
               size="lg"
               fullWidth
-              className="py-5 bg-[#292929] hover:bg-black text-2xl"
+              className="py-4 bg-[#292929] hover:bg-black text-xl rounded-xl"
             >
               {loading ? (
                 <div className="flex items-center justify-center gap-2">
