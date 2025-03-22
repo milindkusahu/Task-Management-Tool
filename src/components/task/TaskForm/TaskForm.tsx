@@ -1,11 +1,14 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Button, Input, Dropdown } from "../../common";
 import { Task } from "../../../types/task";
 
 export interface TaskFormProps {
   task?: Task | null;
   initialStatus?: string;
-  onSubmit: (taskData: Omit<Task, "id" | "userId">) => void;
+  onSubmit: (
+    taskData: Omit<Task, "id" | "userId">,
+    attachmentFiles: File[]
+  ) => void;
   onCancel: () => void;
   includeAttachments?: boolean;
   includeTags?: boolean;
@@ -29,12 +32,24 @@ const TaskForm: React.FC<TaskFormProps> = ({
   });
 
   const [attachments, setAttachments] = useState<File[]>([]);
+  const [existingAttachments, setExistingAttachments] = useState<
+    Array<{ name: string; url: string }>
+  >([]);
   const [newTag, setNewTag] = useState("");
 
   const [errors, setErrors] = useState<{
     title?: string;
     dueDate?: string;
   }>({});
+
+  // Initialize existing attachments from task data
+  useEffect(() => {
+    if (task?.attachments) {
+      setExistingAttachments(task.attachments);
+    } else {
+      setExistingAttachments([]);
+    }
+  }, [task]);
 
   const handleChange = (
     e: React.ChangeEvent<
@@ -81,6 +96,14 @@ const TaskForm: React.FC<TaskFormProps> = ({
     });
   };
 
+  const handleRemoveExistingAttachment = (attachmentUrl: string) => {
+    setExistingAttachments(
+      existingAttachments.filter(
+        (attachment) => attachment.url !== attachmentUrl
+      )
+    );
+  };
+
   const validateForm = () => {
     const newErrors: {
       title?: string;
@@ -112,20 +135,11 @@ const TaskForm: React.FC<TaskFormProps> = ({
       category: formData.category,
       dueDate: formData.dueDate,
       tags: formData.tags,
+      attachments: existingAttachments,
     };
 
-    // If we need to include attachments, format them correctly
-    if (includeAttachments && attachments.length > 0) {
-      // Convert File[] to the expected attachments format
-      taskData.attachments = task?.attachments || [];
-
-      // If you need to handle new file uploads, you'll need to implement
-      // file uploading logic elsewhere and just reference the URLs here
-      // This is just a placeholder - in a real app, you'd upload files first
-      // and then add their URLs to the task
-    }
-
-    onSubmit(taskData);
+    // Pass both the task data and new attachment files to the parent component
+    onSubmit(taskData, attachments);
   };
 
   const categoryOptions = [
@@ -259,6 +273,41 @@ const TaskForm: React.FC<TaskFormProps> = ({
           <label className="block text-sm font-medium text-gray-700 mb-1">
             Attachments
           </label>
+
+          {/* Existing attachments section */}
+          {existingAttachments.length > 0 && (
+            <div className="mb-3">
+              <p className="text-sm font-medium mb-2">Current Attachments</p>
+              <div className="space-y-2">
+                {existingAttachments.map((attachment, index) => (
+                  <div
+                    key={index}
+                    className="flex items-center justify-between p-2 border rounded-md"
+                  >
+                    <a
+                      href={attachment.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-blue-600 hover:underline text-sm truncate flex-1"
+                    >
+                      {attachment.name}
+                    </a>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        handleRemoveExistingAttachment(attachment.url)
+                      }
+                      className="ml-2 text-red-500 hover:text-red-700"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Upload new files section */}
           <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
             <input
               type="file"
@@ -277,7 +326,7 @@ const TaskForm: React.FC<TaskFormProps> = ({
             {attachments.length > 0 && (
               <div className="mt-2">
                 <p className="text-sm font-medium">
-                  {attachments.length} file(s) selected
+                  {attachments.length} new file(s) selected
                 </p>
                 <ul className="mt-2 text-left max-h-32 overflow-y-auto">
                   {Array.from(attachments).map((file, index) => (

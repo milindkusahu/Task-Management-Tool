@@ -4,6 +4,7 @@ import {
   getTasksByStatus,
   createTask,
   updateTask,
+  updateTaskWithAttachments,
   deleteTask,
 } from "../services/taskService";
 import { Task } from "../types/task";
@@ -65,11 +66,20 @@ export function useTasks() {
     mutationFn: async ({
       taskId,
       updates,
+      attachmentFiles,
     }: {
       taskId: string;
       updates: Partial<Task>;
+      attachmentFiles?: File[];
     }) => {
       if (!user?.uid) throw new Error("User not authenticated");
+
+      // If we have new attachment files, use the special update function
+      if (attachmentFiles && attachmentFiles.length > 0) {
+        return updateTaskWithAttachments(taskId, updates, attachmentFiles);
+      }
+
+      // Otherwise use the regular update function
       return updateTask(taskId, updates);
     },
     onSuccess: () => {

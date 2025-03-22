@@ -6,7 +6,10 @@ import { Task } from "../../../types/task";
 export interface CreateTaskModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (taskData: Omit<Task, "id" | "userId">) => void;
+  onSave: (
+    taskData: Omit<Task, "id" | "userId">,
+    attachmentFiles: File[]
+  ) => void;
   initialStatus?: string;
 }
 
@@ -16,8 +19,11 @@ const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
   onSave,
   initialStatus = "TO-DO",
 }) => {
-  const handleSubmit = (taskData: Omit<Task, "id" | "userId">) => {
-    onSave(taskData);
+  const handleSubmit = (
+    taskData: Omit<Task, "id" | "userId">,
+    attachmentFiles: File[]
+  ) => {
+    onSave(taskData, attachmentFiles);
     onClose();
   };
 

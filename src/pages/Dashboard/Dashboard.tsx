@@ -18,6 +18,7 @@ import {
 } from "../../components";
 import { TaskFilterValues } from "../../components/task/TaskFilters";
 import { TaskColumn } from "../../components/task/TaskBoard";
+import { updateTaskWithAttachments } from "../../services/taskService";
 
 const Dashboard = () => {
   const { data: userProfile } = useCurrentUser();
@@ -73,12 +74,22 @@ const Dashboard = () => {
   const handleTaskUpdate = async ({
     taskId,
     updates,
+    attachmentFiles,
   }: {
     taskId: string;
     updates: Partial<Task>;
+    attachmentFiles?: File[];
   }) => {
     try {
-      await updateTask({ taskId, updates });
+      // If there are attachment files, we need to process them
+      if (attachmentFiles && attachmentFiles.length > 0) {
+        // For updates with new attachments, we need to handle this in the task service
+        await updateTaskWithAttachments(taskId, updates, attachmentFiles);
+      } else {
+        // Regular update without new file attachments
+        await updateTask({ taskId, updates });
+      }
+
       if (isTaskDetailModalOpen) {
         setIsTaskDetailModalOpen(false);
       }
@@ -362,11 +373,14 @@ const Dashboard = () => {
     setDraggedTask(null);
   };
 
-  const handleCreateTask = async (taskData: Omit<Task, "id" | "userId">) => {
+  const handleCreateTask = async (
+    taskData: Omit<Task, "id" | "userId">,
+    attachmentFiles: File[]
+  ) => {
     try {
       await createTask({
         taskData,
-        attachmentFiles: [],
+        attachmentFiles: attachmentFiles,
       });
       setIsTaskModalOpen(false);
     } catch (error) {

@@ -15,10 +15,77 @@ export interface ActivityLogItem {
 export interface TaskDetailModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onUpdate: (data: { taskId: string; updates: Partial<Task> }) => void;
+  onUpdate: (data: {
+    taskId: string;
+    updates: Partial<Task>;
+    attachmentFiles?: File[];
+  }) => void;
   task: Task | null;
   activityLog?: ActivityLogItem[];
 }
+
+interface ImageWithFallbackProps {
+  src: string;
+  alt: string;
+  className?: string;
+}
+
+const isImageUrl = (url: string): boolean => {
+  const imageExtensions = [
+    ".jpg",
+    ".jpeg",
+    ".png",
+    ".gif",
+    ".bmp",
+    ".webp",
+    ".svg",
+  ];
+  const lowerCaseUrl = url.toLowerCase();
+
+  // Check if the URL has a query string and extract the base URL
+  const baseUrl = lowerCaseUrl.split("?")[0];
+
+  return imageExtensions.some((ext) => baseUrl.endsWith(ext));
+};
+
+// Component to handle image loading with fallback
+const ImageWithFallback: React.FC<ImageWithFallbackProps> = ({
+  src,
+  alt,
+  className,
+}) => {
+  const [imgSrc, setImgSrc] = useState(src);
+  const [error, setError] = useState(false);
+
+  useEffect(() => {
+    setImgSrc(src);
+    setError(false);
+  }, [src]);
+
+  const handleError = () => {
+    setError(true);
+  };
+
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center p-4 text-center bg-gray-100 rounded">
+        <p className="text-sm text-gray-500">Image cannot be displayed</p>
+        <a
+          href={src}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-blue-600 hover:underline text-xs mt-1"
+        >
+          Open image in new tab
+        </a>
+      </div>
+    );
+  }
+
+  return (
+    <img src={imgSrc} alt={alt} className={className} onError={handleError} />
+  );
+};
 
 const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
   isOpen,
@@ -33,12 +100,16 @@ const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
     setIsEditing(false);
   }, [isOpen, task]);
 
-  const handleTaskUpdate = (taskData: Omit<Task, "id" | "userId">) => {
+  const handleTaskUpdate = (
+    taskData: Omit<Task, "id" | "userId">,
+    attachmentFiles: File[]
+  ) => {
     if (!task) return;
 
     onUpdate({
       taskId: String(task.id),
       updates: taskData,
+      attachmentFiles: attachmentFiles,
     });
     setIsEditing(false);
   };
@@ -138,25 +209,71 @@ const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
             {task.attachments && task.attachments.length > 0 && (
               <div className="mb-6">
                 <h3 className="text-sm font-medium text-gray-700 mb-2">
-                  Attachments
+                  Attachments ({task.attachments.length})
                 </h3>
-                <div className="space-y-2">
-                  {task.attachments.map((attachment, index) => (
-                    <div
-                      key={index}
-                      className="flex items-center gap-2 p-2 border rounded-md"
-                    >
-                      <span className="text-blue-600 truncate flex-1">
-                        <a
-                          href={attachment.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                        >
-                          {attachment.name}
-                        </a>
-                      </span>
-                    </div>
-                  ))}
+                <div className="space-y-4">
+                  {task.attachments.map((attachment, index) => {
+                    const isImage = isImageUrl(attachment.url);
+
+                    return (
+                      <div
+                        key={index}
+                        className="border rounded-md overflow-hidden"
+                      >
+                        {isImage ? (
+                          <div className="flex flex-col">
+                            <div className="p-2 border-b bg-gray-50 flex justify-between items-center">
+                              <span className="text-sm font-medium truncate">
+                                {attachment.name}
+                              </span>
+                              <a
+                                href={attachment.url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-blue-600 hover:underline text-xs ml-2"
+                              >
+                                Open
+                              </a>
+                            </div>
+                            <div className="p-3 bg-gray-50 flex justify-center">
+                              <ImageWithFallback
+                                src={attachment.url}
+                                alt={attachment.name}
+                                className="max-w-full max-h-64 object-contain rounded"
+                              />
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-2 p-3 hover:bg-gray-50">
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              className="h-5 w-5 text-gray-500"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                              />
+                            </svg>
+                            <span className="text-blue-600 truncate flex-1">
+                              <a
+                                href={attachment.url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="hover:underline"
+                              >
+                                {attachment.name}
+                              </a>
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             )}
